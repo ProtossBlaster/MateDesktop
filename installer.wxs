@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LeapMotor Mate — Windows Installer package (WiX 6/7).
+
+  The .msi Silvio asked for. It does the same job as installer.iss and installs the same folder;
+  what differs is the format, and with it who can deploy it: an .msi is a database Windows
+  Installer understands, so a company can push it through group policy or Intune, which an .exe
+  setup cannot be.
+
+      wix build -d AppVersion=1.0.0 -ext WixToolset.UI.wixext installer.wxs -o dist\...msi
+
+  Scope="perUser" is the important line. An .msi installing per machine would need administrator
+  rights, and an unsigned app asking for administrator rights is exactly the prompt people should
+  refuse. Per-user is a supported configuration — it installs under the user's own profile, needs
+  no elevation, and matches what the Inno build already does.
+
+  There is no certs\ anywhere in here. app.crt/app.key are the Leapmotor app's TLS pair, published
+  at markoceri/leapmotor-certs, which the setup wizard asks each user to upload once — this project
+  does not redistribute them, and the build refuses to package one if it finds it.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package
+      Name="LeapMotor Mate"
+      Manufacturer="ProtossBlaster"
+      Version="$(AppVersion)"
+      Language="1033"
+      Compressed="yes"
+      Scope="perUser"
+      UpgradeCode="D8953C0F-444D-43D8-83C6-CDA2E4E6F198">
+
+    <!-- Replace an older copy rather than installing beside it. The UpgradeCode above is what
+         Windows matches on, so it must never change between releases. -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="MateIcon" SourceFile="Mate.ico" />
+    <Property Id="ARPPRODUCTICON" Value="MateIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/ProtossBlaster/leapmotor-mate" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/ProtossBlaster/leapmotor-mate/issues" />
+    <!-- Without this the uninstaller offers a Repair option that would do nothing useful here. -->
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+
+    <!-- %LOCALAPPDATA%\Programs\LeapMotor Mate — local rather than roaming, for the same reason
+         the app's data is: on a domain-joined machine a roaming profile is copied to the server
+         at every sign-out, and neither a 70 MB app nor a driving history belongs on that trip. -->
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="LeapMotor Mate" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppShortcutDir" Name="LeapMotor Mate" />
+    </StandardDirectory>
+
+    <!-- The whole PyInstaller output, harvested at build time. WiX 4 and later can take a
+         directory tree directly; before that this needed a separate harvesting step whose output
+         was checked in and went stale. Three hundred files, so anything hand-written would be a
+         list nobody could keep correct. -->
+    <Files Include="dist\LeapMotor Mate\**" Directory="INSTALLFOLDER" />
+
+    <Component Directory="AppShortcutDir" Guid="6D84B3D9-A9B2-43F9-A786-59F8E1ED16A1">
+      <Shortcut Id="AppStartMenuShortcut"
+                Name="LeapMotor Mate"
+                Description="Mate for your Leapmotor car"
+                Target="[INSTALLFOLDER]LeapMotor Mate.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="RemoveAppShortcutDir" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\ProtossBlaster\LeapMotor Mate"
+                     Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- Take the start-at-login entry away on uninstall, by asking the app to undo its own
+         registration just before its files are deleted.
+
+         The obvious authoring does not work, and that is measured rather than assumed:
+         <RemoveRegistryValue> lands in Windows Installer's RemoveRegistry table, which is
+         processed when a component is INSTALLED, so after uninstalling the value was still
+         sitting there. Windows Installer removes registry values it OWNS, and this one is written
+         by the app when the user moves the switch in Settings — the package never owned it.
+         The one declarative alternative, removing the whole key, is out of the question:
+         HKCU\...\Run is shared, and taking it away would stop every other application on that
+         account from starting at sign-in, silently and with nothing pointing back at us.
+
+         So the uninstaller runs the shell with the remove-autostart switch (see ExeCommand below),
+         which calls the same code that wrote the entry and then exits. Return="ignore" because a
+         leftover registry value is
+         untidy while a failed uninstall is not, and Impersonate="yes" because the entry lives in
+         the user's own hive, not the machine's. -->
+    <CustomAction Id="RemoveAutostartEntry"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]LeapMotor Mate.exe&quot; --remove-autostart"
+                  Execute="immediate"
+                  Return="ignore" />
+    <InstallExecuteSequence>
+      <Custom Action="RemoveAutostartEntry" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot;" />
+    </InstallExecuteSequence>
+
+    <Component Directory="INSTALLFOLDER" Guid="F25CDB23-2900-425A-BF0B-0E4D996FB9B3">
+      <RegistryValue Root="HKCU" Key="Software\ProtossBlaster\LeapMotor Mate"
+                     Name="autostartCleanup" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- NOTE — uninstalling does NOT remove %LOCALAPPDATA%\LeapMotorMate: the database, the
+         certificate and the log. That is the user's driving history, sometimes years of it, and
+         an uninstaller is no place for a question whose wrong answer cannot be undone. -->
+  </Package>
+</Wix>

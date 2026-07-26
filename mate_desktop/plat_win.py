@@ -99,8 +99,26 @@ def app_executable() -> Path | None:
 
 
 def _run_key(access):
+    """For READING. Raises if the key is absent, which the callers read as 'not enabled' — and
+    that is the right answer: no key means no entry means the switch is off."""
     import winreg
     return winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, access)
+
+
+def _run_key_for_write():
+    """For WRITING, where a missing key must be created rather than refused.
+
+    HKCU\\...\\Run looks permanent and is not: it is an ordinary key that exists because something
+    put a value in it, and it goes away again when the last one is removed — Inno's uninstaller
+    does exactly that when Mate was the only entry. Found on a machine where the key had genuinely
+    vanished, and the symptom is the worst kind: OpenKey raises FileNotFoundError, enable() catches
+    it, logs one line nobody reads, and the user's "start at login" switch does nothing at all.
+
+    CreateKeyEx opens an existing key and creates a missing one, which is what every application
+    that registers itself here actually does.
+    """
+    import winreg
+    return winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, RUN_KEY, 0, winreg.KEY_SET_VALUE)
 
 
 def is_enabled() -> bool:
@@ -131,7 +149,7 @@ def _command_for(exe: Path) -> str:
 def enable(exe: Path, log=print) -> bool:
     try:
         import winreg
-        with _run_key(winreg.KEY_SET_VALUE) as key:
+        with _run_key_for_write() as key:
             winreg.SetValueEx(key, RUN_VALUE, 0, winreg.REG_SZ, _command_for(exe))
         log(f"start at login: on ({exe.name})")
         return True

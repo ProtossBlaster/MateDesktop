@@ -576,11 +576,37 @@ def main() -> int:
     return services.exit_code
 
 
+REMOVE_AUTOSTART_FLAG = "--remove-autostart"
+
+
+def remove_autostart() -> int:
+    """Take the start-at-login registration away and exit. Nothing else — no window, no services.
+
+    Called by the uninstaller, and it exists because of a genuine limitation rather than a
+    preference. Windows Installer can remove registry values it OWNS; ours is written by the app
+    when the user moves the switch, so the .msi never owned it, and the one declarative way to get
+    rid of it — removing the whole key — would take every other application's start-at-login entry
+    with it. HKCU\\...\\Run is shared, and that failure would be silent and untraceable.
+
+    So the uninstaller asks the app to undo its own registration, using the code that made it.
+    Never fatal: a leftover entry is untidy, a failed uninstall is worse.
+    """
+    try:
+        plat.autostart_sync(False, log=log)
+    except Exception as exc:                                   # noqa: BLE001
+        log(f"could not remove the start-at-login entry: {exc}")
+    return 0
+
+
 if __name__ == "__main__":
     # Child dispatch must come first: this same binary is both the launcher and, re-run with
     # the marker argument, each of the two services.
     if len(sys.argv) > 3 and sys.argv[1] == CHILD_FLAG:
         sys.exit(run_as_child())
+    # …and before anything that opens a window, takes the single-instance lock or touches the
+    # database: this runs while the app is being deleted from underneath it.
+    if len(sys.argv) > 1 and sys.argv[1] == REMOVE_AUTOSTART_FLAG:
+        sys.exit(remove_autostart())
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     try:
         sys.exit(main())

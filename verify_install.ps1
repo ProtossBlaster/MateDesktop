@@ -24,7 +24,13 @@ if (Test-Path $exe) {
     Check "version resource" ($vi.FileVersion) "$($vi.FileVersion)  $($vi.CompanyName)"
 }
 Check "payload seed" (Test-Path (Join-Path $App "_internal\payload_seed\web\main.py")) "web/main.py present"
-Check "uninstaller" (Test-Path (Join-Path $App "unins000.exe")) "unins000.exe"
+
+# The two packagings uninstall differently and both are legitimate: Inno drops its own
+# unins000.exe into the folder, while an .msi is removed by Windows Installer and leaves no
+# uninstaller behind at all. What has to be true either way is that Settings > Apps offers to
+# remove it — checked further down — so this only reports which of the two we are looking at.
+$inno = Test-Path (Join-Path $App "unins000.exe")
+Write-Host ("  INFO  {0}  {1}" -f "packaging".PadRight(28), $(if ($inno) { "Inno Setup (unins000.exe present)" } else { "Windows Installer (.msi)" }))
 
 Write-Host "`n=== the property that must never regress ==="
 # The Leapmotor certificate belongs to markoceri/leapmotor-certs and the user uploads it in the

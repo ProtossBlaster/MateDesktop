@@ -63,7 +63,11 @@ MinVersion=10.0
 AppMutex=LeapMotorMate
 
 OutputDir=dist
-OutputBaseFilename={#AppName}-Setup-{#AppVersion}-x64
+; Hyphens, not the space in AppName. This is a file people download, carry on a stick and type
+; into a command line, and it sits next to LeapMotor-Mate-1.0.0-arm64.dmg on the same release
+; page — the two should look like siblings. A space in it also broke the very first attempt to
+; copy it off the build machine.
+OutputBaseFilename=LeapMotor-Mate-Setup-{#AppVersion}-x64
 SetupIconFile=Mate.ico
 WizardStyle=modern
 Compression=lzma2/max

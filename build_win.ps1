@@ -149,7 +149,57 @@ Write-Host "==> building the installer"
 & $Iscc "/DAppVersion=$ShellVersion" (Join-Path $Here "installer.iss") | Select-Object -Last 2
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed with exit code $LASTEXITCODE" }
 
-$Setup = "$Out\LeapMotor Mate-Setup-$ShellVersion-x64.exe"
+$Setup = "$Out\LeapMotor-Mate-Setup-$ShellVersion-x64.exe"
 if (-not (Test-Path $Setup)) { throw "ISCC reported success but $Setup is not there" }
 Write-Host "==> done: $Setup"
 "{0:N0} MB" -f ((Get-Item $Setup).Length / 1MB)
+
+# ── the .msi ────────────────────────────────────────────────────────────────────────────
+# Same folder, same install location, different wrapper. The one thing an .msi can do that the
+# .exe cannot is be pushed by a company through group policy or Intune. See installer.wxs.
+# WiX **5**, deliberately, and installed as a dotnet tool rather than from winget.
+#
+# From version 6 onwards WiX refuses to build until you accept the Open Source Maintenance Fee
+# licence — "error WIX7015: You must accept the Open Source Maintenance Fee (OSMF) EULA". That is
+# a licence with terms about who may use it free of charge, so accepting it is a statement about
+# this project that only its owner can make. Version 5 speaks the same language as installer.wxs
+# and asks for nothing, so the question does not arise.
+#
+#     winget install --id Microsoft.DotNet.SDK.8 --exact
+#     dotnet tool install --global wix --version 5.0.2
+#
+# The explicit path first: a winget-installed WiX 6/7 also puts a wix.exe on PATH, and if one is
+# left over on the machine it would win the lookup and fail the build with that same licence
+# error — for a version we are deliberately not using.
+$Wix = @("$env:USERPROFILE\.dotnet\tools\wix.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $Wix) { $Wix = (Get-Command wix.exe -ErrorAction SilentlyContinue).Source }
+if (-not $Wix) {
+    Write-Warning "WiX not found - .msi skipped.  dotnet tool install --global wix --version 5.0.2"
+    return
+}
+
+Write-Host "==> building the msi"
+# The UI dialogs (welcome, licence, install location) live in an extension, not in wix itself.
+# Adding it is idempotent, so it can run on every build rather than being a setup step someone has
+# to remember on a fresh machine or a CI runner. The version is PINNED to match wix itself: left
+# open it resolves to the newest published, which WiX 5 declines to load — with a warning, not an
+# error, so the build appears to succeed and the wizard simply has no dialogs.
+& $Wix extension add -g WixToolset.UI.wixext/5.0.2 2>&1 | Out-Null
+
+# From the project root, because every path inside installer.wxs — the icon, the licence, the
+# payload folder — is written relative to it, and wix resolves them against the CURRENT directory
+# rather than the .wxs file's own. Run from anywhere else and it fails on the icon; run it over
+# SSH, where you land in the home directory, and it fails every time.
+#
+# -arch x64 because the payload is: the shell, the interpreter and every bundled library are
+# 64-bit. Left at the default the package would declare itself x86 while carrying x64 binaries.
+$Msi = "$Out\LeapMotor-Mate-$ShellVersion-x64.msi"
+Push-Location $Here
+try {
+    & $Wix build -arch x64 -d AppVersion=$ShellVersion -ext WixToolset.UI.wixext `
+        installer.wxs -o $Msi
+} finally { Pop-Location }
+if ($LASTEXITCODE -ne 0) { throw "wix build failed with exit code $LASTEXITCODE" }
+if (-not (Test-Path $Msi)) { throw "wix reported success but $Msi is not there" }
+Write-Host "==> done: $Msi"
+"{0:N0} MB" -f ((Get-Item $Msi).Length / 1MB)
