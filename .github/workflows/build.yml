@@ -34,7 +34,7 @@ jobs:
     name: macOS (Apple Silicon)
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       # The seed payload always comes from a RELEASED Mate, never from whatever main happens to be
       # mid-way through. It is only a seed — the app updates itself on first launch — but a build
@@ -94,7 +94,7 @@ jobs:
     name: Windows (x64)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - name: Fetch Mate
         shell: bash
