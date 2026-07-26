@@ -19,6 +19,30 @@ account. Same Mate, same data, same updates — no containers, no add-ons, nothi
 
 Both are on the [releases page](../../releases/latest).
 
+### Checking what you downloaded
+
+Neither package is signed, so this is the one check available. Every release lists the SHA-256 of
+each file, both in its notes and in a `SHA256SUMS` file. Compare, and the value must match
+character for character.
+
+**Windows** — in PowerShell, in the folder you downloaded to:
+
+```powershell
+Get-FileHash .\LeapMotor-Mate-*.msi -Algorithm SHA256 | Format-List
+```
+
+**macOS** — in Terminal:
+
+```bash
+shasum -a 256 ~/Downloads/LeapMotor-Mate-*.dmg
+```
+
+Worth knowing what this does and does not tell you. It catches a corrupted download, and a file
+that was swapped somewhere along the way — on a mirror, in a forum post, on a stick. It does
+**not** prove the file came from us: anyone able to replace the download could also edit the page
+listing its checksum. Only a code signature, which the operating system checks by itself on every
+launch, proves that — and neither of these builds has one.
+
 ---
 
 ## First launch

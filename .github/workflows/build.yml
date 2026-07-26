@@ -125,7 +125,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows-x64
-          path: dist/*Setup*.exe
+          # BOTH packages. The .msi is the one people download; the Inno .exe is kept alongside
+          # it. An earlier version of this listed only the .exe, so a release would have shipped
+          # without the main package and the tick would still have been green.
+          path: |
+            dist/*.msi
+            dist/*Setup*.exe
           if-no-files-found: error
 
   release:
@@ -142,14 +147,42 @@ jobs:
       # It is worth nothing unless it is published somewhere other than next to the file, which is
       # what the release notes are for.
       - name: Checksums
+        # Neither package is signed, so a checksum is the only thing a careful person can check —
+        # and it is worth publishing only if it is USABLE. That means three things, and the first
+        # version of this step had none of them: a SHA256SUMS file people can feed to a tool, the
+        # values in the notes as well (so they survive on a page that is hard to tamper with
+        # quietly), and the command to run, for both systems, next to them.
+        #
+        # Be clear about what this does and does not do. It catches a corrupted download and a
+        # file swapped on a mirror or passed around by hand. It does NOT prove the file is ours:
+        # anyone who could replace the download could replace the page it is listed on. Only a
+        # code signature, which the operating system checks by itself, does that.
         run: |
           cd artifacts
-          find . -type f \( -name '*.dmg' -o -name '*.exe' \) -exec mv {} . \;
+          find . -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.msi' \) -exec mv -f {} . \;
+          rmdir */ 2>/dev/null || true
+          sha256sum *.dmg *.msi *.exe > SHA256SUMS
           {
-            echo "### SHA-256"
+            echo "### Verifying what you downloaded"
+            echo
+            echo "Neither package is signed, so this is the one check available. It catches a"
+            echo "corrupted or swapped file; it cannot prove the file is ours."
+            echo
             echo '```'
-            sha256sum *.dmg *.exe
+            cat SHA256SUMS
             echo '```'
+            echo
+            echo "**Windows** — in PowerShell, in the folder you downloaded to:"
+            echo '```powershell'
+            echo 'Get-FileHash .\LeapMotor-Mate-*.msi -Algorithm SHA256 | Format-List'
+            echo '```'
+            echo
+            echo "**macOS** — in Terminal:"
+            echo '```bash'
+            echo 'shasum -a 256 ~/Downloads/LeapMotor-Mate-*.dmg'
+            echo '```'
+            echo
+            echo "The value it prints must match the line above for that file, character for character."
           } > notes.md
           cat notes.md
 
@@ -157,6 +190,8 @@ jobs:
         with:
           files: |
             artifacts/*.dmg
+            artifacts/*.msi
             artifacts/*.exe
+            artifacts/SHA256SUMS
           body_path: artifacts/notes.md
           draft: true         # a human reads it, adds the changelog, and presses publish
