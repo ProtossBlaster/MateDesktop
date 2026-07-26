@@ -25,6 +25,9 @@ from pathlib import Path
 
 RELEASES_API = "https://api.github.com/repos/ProtossBlaster/leapmotor-mate/releases/latest"
 TARBALL = "https://github.com/ProtossBlaster/leapmotor-mate/archive/refs/tags/{tag}.tar.gz"
+# The SHELL's own releases — a different repository, because the two ship on completely different
+# schedules. Mate updates itself from the first; nothing has ever looked at the second.
+SHELL_RELEASES_API = "https://api.github.com/repos/ProtossBlaster/MateDesktop/releases/latest"
 PAYLOAD_PARTS = ("web", "poller")
 _TIMEOUT = 30
 
@@ -50,16 +53,49 @@ def payload_version(payload_dir: Path) -> str | None:
     return None
 
 
-def latest_release() -> dict | None:
-    """The newest published release, or None when GitHub can't be reached (never fatal)."""
+def _latest(api: str) -> dict | None:
+    """The newest published release at `api`, or None when GitHub can't be reached (never fatal)."""
     try:
-        req = urllib.request.Request(RELEASES_API, headers={
+        req = urllib.request.Request(api, headers={
             "Accept": "application/vnd.github+json", "User-Agent": "leapmotor-mate-desktop"})
         with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
             data = json.load(r)
-        return {"tag": data.get("tag_name", ""), "version": str(data.get("tag_name", "")).lstrip("vV")}
-    except Exception:
+        tag = data.get("tag_name", "")
+        if not tag:
+            return None
+        return {"tag": tag, "version": str(tag).lstrip("vV")}
+    except Exception:                                          # noqa: BLE001
         return None
+
+
+def latest_release() -> dict | None:
+    """The newest Mate. This is the payload the app swaps in on its own."""
+    return _latest(RELEASES_API)
+
+
+def newer_shell(current: str) -> str | None:
+    """The version of a newer SHELL if one has been published, else None.
+
+    The shell does not update itself and never will: replacing a running application from inside
+    itself is a different class of problem, and without a code signature it could not verify what
+    it was installing anyway. But until now it did not even NOTICE — it checked GitHub for Mate on
+    every launch and never once for itself.
+
+    That gap has a cost, and it is not hypothetical. A defect fixed here — the start-at-login
+    switch failing silently on a machine with no HKCU\\...\\Run key — would never have reached
+    anyone already running the old build: nothing would have told them a fix existed. The only
+    moment the user was ever pointed at a download was a Mate release REFUSED for needing a newer
+    shell, which is the emergency, not the maintenance.
+
+    So: ask, compare, and let the caller show a badge. Nothing is downloaded, nothing is nagged.
+    Silent on any failure — an app that cannot reach GitHub must still start.
+    """
+    rel = _latest(SHELL_RELEASES_API)
+    if not rel:
+        return None
+    if version_tuple(rel["version"]) > version_tuple(current):
+        return rel["version"]
+    return None
 
 
 # ── the dependency guard ────────────────────────────────────────────────────────────────

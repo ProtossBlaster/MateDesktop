@@ -199,6 +199,13 @@ def child_env(part: str, port: int) -> dict:
     if BLOCKED_UPDATE:
         env["MATE_UPDATE_BLOCKED"] = BLOCKED_UPDATE
         env["MATE_DESKTOP_DOWNLOAD_URL"] = DOWNLOAD_URL
+    # …and, separately, a newer SHELL simply being available. Two different messages that used to
+    # be one: this is "there is a better version when you want it", while BLOCKED_UPDATE above is
+    # "Mate cannot move until you act". Conflating them would either nag about a nicety or bury
+    # the one that matters.
+    if NEWER_SHELL:
+        env["MATE_DESKTOP_NEWER"] = NEWER_SHELL
+        env["MATE_DESKTOP_DOWNLOAD_URL"] = DOWNLOAD_URL
     return env
 
 
@@ -295,6 +302,9 @@ DEMO_DB = None          # set on first use — the sample database lives beside 
 # Version the app wanted but could not take (too old a shell). Passed to the UI so the badge can
 # ask for a new download — the one update that never arrives on its own.
 BLOCKED_UPDATE = ""
+# A newer shell exists and this one could be replaced whenever the user feels like it. Set on
+# every launch; empty when this is the newest, or when GitHub could not be reached.
+NEWER_SHELL = ""
 
 
 def demo_requested() -> bool:
@@ -557,6 +567,13 @@ def main() -> int:
     fresh = False
     if os.environ.get("MATE_SKIP_UPDATE") != "1":
         fresh = try_update()
+        # …and, while we are talking to GitHub anyway, ask whether a newer SHELL exists. One extra
+        # request on a launch that already makes one, and it closes the gap where a fix here
+        # reached nobody who was not already looking for it.
+        global NEWER_SHELL
+        NEWER_SHELL = updater.newer_shell(SHELL_VERSION) or ""
+        if NEWER_SHELL:
+            log(f"a newer app is available: {SHELL_VERSION} → {NEWER_SHELL} ({DOWNLOAD_URL})")
 
     services = Services(fresh_payload=fresh)
     services.start()
