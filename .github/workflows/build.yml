@@ -47,6 +47,11 @@ jobs:
           [ -n "$REF" ] || REF="$(git describe --tags --abbrev=0)"
           git checkout --quiet "$REF"
           echo "seeding from Mate $REF"
+          # Published beside the packages so Mate's own CI can read it back. The shell carries
+          # exactly the libraries these two requirements files asked for at THIS tag, so this one
+          # line is enough for Mate to answer "would today's release still run on the shell people
+          # already have?" without anybody having to remember to ask.
+          echo "$REF" > "$GITHUB_WORKSPACE/payload-seed.txt"
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
@@ -88,6 +93,12 @@ jobs:
         with:
           name: macos-arm64
           path: dist/*.dmg
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: payload-seed
+          path: payload-seed.txt
           if-no-files-found: error
 
   windows:
@@ -180,10 +191,14 @@ jobs:
         # code signature, which the operating system checks by itself, does that.
         run: |
           cd artifacts
-          find . -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.msi' \) -exec mv -f {} . \;
+          find . -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.msi' -o -name 'payload-seed.txt' \) -exec mv -f {} . \;
           rmdir */ 2>/dev/null || true
           sha256sum *.dmg *.msi *.exe > SHA256SUMS
           {
+            echo "Built from Mate **$(cat payload-seed.txt)**, which is the version inside the"
+            echo "installer. The app fetches whatever is newest on first launch, so this only"
+            echo "matters if you open it with no internet."
+            echo
             echo "### Verifying what you downloaded"
             echo
             echo "Neither package is signed, so this is the one check available. It catches a"
@@ -213,6 +228,7 @@ jobs:
             artifacts/*.dmg
             artifacts/*.msi
             artifacts/*.exe
+            artifacts/payload-seed.txt
             artifacts/SHA256SUMS
           body_path: artifacts/notes.md
           draft: true         # a human reads it, adds the changelog, and presses publish
