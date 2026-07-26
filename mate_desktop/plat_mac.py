@@ -135,6 +135,12 @@ def autostart_sync(wanted: bool, log=print) -> None:
 # ── Where the data lives ────────────────────────────────────────────────────────────────
 
 APP_NAME = "LeapMotorMate"
+# The two names macOS files an app's caches under: the bundle identifier when it is properly
+# bundled, the displayed name otherwise. Both turn up in practice, and removing Mate has to know
+# both — see remove_everything(). BUNDLE_ID is read by build_mac.sh rather than repeated there,
+# so the identifier the system keys everything on is written down once.
+BUNDLE_ID = "com.protossblaster.matedesktop"
+DISPLAY_NAME = "LeapMotor Mate"
 
 
 def data_dir() -> Path:
@@ -248,6 +254,36 @@ def remove_everything(app_dir, log=print) -> None:
             log(f"removed {app_dir}")
     except Exception as exc:                                   # noqa: BLE001
         log(f"could not remove {app_dir}: {exc}")
+
+    # …and the caches macOS keeps FOR us, outside Application Support, which the first version of
+    # this missed entirely: it removed the data directory and left three megabytes of WebKit cache
+    # behind, so "removes everything" was not true. Found by checking a sentence in the README
+    # rather than by anything failing.
+    #
+    # EXACT paths, never a search for "leapmotor". The official Leapmotor app keeps
+    # ~/Library/Application Scripts/com.leapmotor.abroad and a group container beside these on a
+    # real user's Mac, and a glob written to be thorough would take their application with it.
+    home = Path.home()
+    for path in (home / "Library" / "Caches" / DISPLAY_NAME,
+                 home / "Library" / "Caches" / BUNDLE_ID,
+                 home / "Library" / "WebKit" / DISPLAY_NAME,
+                 home / "Library" / "WebKit" / BUNDLE_ID,
+                 home / "Library" / "Saved Application State" / f"{BUNDLE_ID}.savedState"):
+        try:
+            if path.is_dir():
+                shutil.rmtree(path, ignore_errors=True)
+                log(f"removed {path}")
+        except Exception as exc:                               # noqa: BLE001
+            log(f"could not remove {path}: {exc}")
+    # Crash reports are one file per crash, named with a UUID — matched on the prefix, which is
+    # the app's own name and an underscore, so nothing else can be caught by it.
+    reports = home / "Library" / "Application Support" / "CrashReporter"
+    try:
+        for f in reports.glob(f"{DISPLAY_NAME}_*.plist"):
+            f.unlink(missing_ok=True)
+            log(f"removed {f.name}")
+    except Exception:                                          # noqa: BLE001
+        pass
 
     # Only from a real .app; running from a checkout there is nothing to bin, and binning a
     # developer's working copy would be a memorable way to lose an afternoon.

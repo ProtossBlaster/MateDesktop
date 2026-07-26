@@ -34,7 +34,7 @@ rm -rf "$OUT" "$HERE/build"
   `# Reverse-DNS, as macOS expects: it is what the OS keys preferences, permissions and the` \
   `# login item on, and what code signing requires. The PyInstaller default ("LeapMotor Mate")` \
   `# is not a valid identifier and would have had to change before the first signed build.` \
-  --osx-bundle-identifier "com.protossblaster.matedesktop" \
+  --osx-bundle-identifier "$(grep -m1 '^BUNDLE_ID' "$HERE/mate_desktop/plat_mac.py" | cut -d'"' -f2)" \
   --noconfirm \
   --distpath "$OUT" \
   --workpath "$HERE/build" \

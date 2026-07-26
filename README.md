@@ -91,7 +91,12 @@ baked into a download would go quietly stale the day they are changed — with n
 the outside why Mate had stopped working.
 
 **2 — Your Leapmotor account.** Email, password and operation PIN, the same as the official app.
-Mate detects your model and battery on its own.
+
+Mate then reads your car from the cloud and shows you which one it found. The **battery** is the
+part it cannot always settle by itself: where your model has one European variant it fills the
+capacity in, and where there are several it lists them and you pick. If it cannot work out the
+car at all, you type the capacity yourself — it is on the certificate of conformity, and it can
+be changed later in **Settings ▸ Battery**.
 
 Then it starts recording.
 
@@ -117,21 +122,51 @@ Raspberry Pi, a NAS — and use this build to try Mate out first. Your data come
 |---|---|---|
 | The app | `%LOCALAPPDATA%\Programs\LeapMotor Mate` | `/Applications` |
 | Your data | `%LOCALAPPDATA%\LeapMotorMate` | `~/Library/Application Support/LeapMotorMate` |
-| Removing it | Settings ▸ Apps ▸ uninstall | Settings ▸ App ▸ **Remove Mate and its data** |
-
-**Removing Mate removes everything** — the database, the certificate, the logs. Nothing is left
-behind on the machine, and there is a confirmation that says so before anything happens. If you
-want to keep the driving history, export it first: **Settings → Export / Backup**.
-
-*Updating is not removing.* A newer version installed over an older one keeps all of it.
-
-On **macOS** the button in Settings is the only way, and it exists because the system offers no
-other: dragging an app to the Bin deletes the app and leaves Application Support exactly where it
-is — which is why a Mac fills up with folders belonging to programs it no longer has. The button
-deletes the data and puts the app in the Bin, where you can still change your mind.
 
 Mate uses port 4000, or the next free one if something already has it. It talks to Leapmotor's
 cloud, to GitHub to check for updates, and to whichever optional services you switch on.
+
+---
+
+## Removing it
+
+> **Back up first if you want to keep the driving history.** Removing Mate deletes it, and it
+> cannot be recovered — the cloud keeps no history to replay. **Settings → Export / Backup**.
+
+**Updating is not removing.** A newer version installed over an older one keeps everything.
+
+### Windows
+
+**Settings ▸ Apps ▸ Installed apps ▸ LeapMotor Mate ▸ Uninstall.** The ordinary route, and it takes
+everything with it: the app, the Start-menu and desktop shortcuts, the start-at-login entry, and
+your data. Nothing is left behind.
+
+### macOS
+
+**Inside Mate: Settings ▸ 🖥️ App ▸ Remove Mate and its data.** It deletes the data, puts the app in
+the Bin and closes. Empty the Bin when you are sure — until you do, the app can still be put back.
+
+It has to be done from inside the app because macOS offers nowhere else. There is no uninstaller:
+dragging an app to the Bin deletes the app and leaves `Application Support` exactly where it is,
+which is why a Mac fills up with folders belonging to programs it no longer has.
+
+**If Mate will not start**, that button is out of reach. Then do it by hand:
+
+```bash
+rm -rf ~/Library/Application\ Support/LeapMotorMate
+rm -rf ~/Library/Caches/LeapMotor\ Mate ~/Library/Caches/com.protossblaster.matedesktop
+rm -rf ~/Library/WebKit/LeapMotor\ Mate ~/Library/WebKit/com.protossblaster.matedesktop
+rm -f  ~/Library/Application\ Support/CrashReporter/LeapMotor\ Mate_*.plist
+rm -rf /Applications/LeapMotor\ Mate.app
+```
+
+The caches are the window's, kept by macOS under both the app's name and its identifier. That is
+the whole list — no preferences file, no login item left behind (the app removes its own when the
+switch is off), nothing under `/Library` outside your home folder.
+
+> If you also have the **official Leapmotor app**, leave
+> `~/Library/Application Scripts/com.leapmotor.abroad` and
+> `~/Library/Group Containers/group.com.leapmotor.abroad` alone — those are its, not Mate's.
 
 ---
 
