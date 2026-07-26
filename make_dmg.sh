@@ -65,7 +65,16 @@ LeapMotor Mate for macOS
    else's to give out, and a copy frozen into an app goes stale the day
    they change it.)
 
-4. Sign in with your Leapmotor account — the same one as the official app.
+4. Sign in with a Leapmotor account that Mate has to ITSELF.
+
+   NOT the account you use on the official phone app. Leapmotor allows about
+   one active session per account: a second client fights Mate for it, they
+   evict each other in a loop, and the car goes offline to Mate with gaps in
+   the history and no error to explain them.
+
+   Add a second account to the car in the official app, and give Mate that
+   one. You will also need the operation PIN — the one the app asks for to
+   authorise remote commands.
 
 Good to know
 ------------

@@ -90,7 +90,16 @@ both and drop them into the two boxes (or paste their text). Once only.
 baked into a download would go quietly stale the day they are changed — with no way to tell from
 the outside why Mate had stopped working.
 
-**2 — Your Leapmotor account.** Email, password and operation PIN, the same as the official app.
+**2 — A Leapmotor account, and it must be one Mate has to itself.**
+
+> ⚠️ **Not the account you are signed into on the official phone app.** Leapmotor allows about one
+> active session per account, so a second client — the app, another add-on, a Docker container,
+> any integration — fights Mate for it. They evict each other in a loop, the car goes offline to
+> Mate, and you get gaps in the history with no error to explain them. Add a second account to the
+> car in the official app and give that one to Mate.
+
+Email, password and the operation PIN, which is the one you use in the app to authorise remote
+commands — locking, climate and the rest.
 
 Mate then reads your car from the cloud and shows you which one it found. The **battery** is the
 part it cannot always settle by itself: where your model has one European variant it fills the
