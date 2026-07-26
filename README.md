@@ -14,8 +14,11 @@ account. Same Mate, same data, same updates — no containers, no add-ons, nothi
 
 | | |
 |---|---|
-| **Windows** | `LeapMotor Mate-Setup-<version>-x64.exe` — 64-bit, Windows 10 or later. Also installs on Windows on ARM. |
+| **Windows** | `LeapMotor-Mate-<version>-x64.msi` — 64-bit, Windows 10 or later. Installs on Windows on ARM too, through its x64 emulation, which needs **Windows 11**. |
 | **macOS** | `LeapMotor-Mate-<version>-arm64.dmg` — **Apple Silicon only** (M1 and later). It will not open on an Intel Mac. |
+
+There is also a `LeapMotor-Mate-Setup-<version>-x64.exe`: the same app in an Inno Setup installer
+rather than a Windows Installer package. Take the `.msi` unless you have a reason not to.
 
 Both are on the [releases page](https://github.com/ProtossBlaster/MateDesktop/releases/latest).
 
@@ -114,12 +117,18 @@ Raspberry Pi, a NAS — and use this build to try Mate out first. Your data come
 |---|---|---|
 | The app | `%LOCALAPPDATA%\Programs\LeapMotor Mate` | `/Applications` |
 | Your data | `%LOCALAPPDATA%\LeapMotorMate` | `~/Library/Application Support/LeapMotorMate` |
-| Removing the app | Settings ▸ Apps ▸ uninstall | drag to the Bin |
+| Removing it | Settings ▸ Apps ▸ uninstall | Settings ▸ App ▸ **Remove Mate and its data** |
 
-**Uninstalling never touches your data**, on either system — that folder is years of driving
-history, and an uninstaller is no place to be asked a question whose wrong answer can't be undone.
-Reinstalling picks it up again exactly where it was. Delete the folder by hand if you do want it
-gone.
+**Removing Mate removes everything** — the database, the certificate, the logs. Nothing is left
+behind on the machine, and there is a confirmation that says so before anything happens. If you
+want to keep the driving history, export it first: **Settings → Export / Backup**.
+
+*Updating is not removing.* A newer version installed over an older one keeps all of it.
+
+On **macOS** the button in Settings is the only way, and it exists because the system offers no
+other: dragging an app to the Bin deletes the app and leaves Application Support exactly where it
+is — which is why a Mac fills up with folders belonging to programs it no longer has. The button
+deletes the data and puts the app in the Bin, where you can still change your mind.
 
 Mate uses port 4000, or the next free one if something already has it. It talks to Leapmotor's
 cloud, to GitHub to check for updates, and to whichever optional services you switch on.
