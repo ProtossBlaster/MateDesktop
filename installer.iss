@@ -82,7 +82,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "italian";  MessagesFile: "compiler:Languages\Italian.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+; Ticked by default, so the two packages behave the same way: the .msi cannot host a checkbox on
+; the standard install page (WiX owns that dialog), so it creates the shortcut unconditionally.
+; Having one package create it and the other not would be the confusing outcome.
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
 ; The whole PyInstaller folder, as it comes. recursesubdirs+createallsubdirs keeps _internal's

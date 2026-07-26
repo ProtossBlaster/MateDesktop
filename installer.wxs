@@ -47,6 +47,16 @@
     <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
     <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
 
+    <!-- A shortcut on the desktop, created by default.
+         Not a tick box, and not for want of trying: WiX 5's UI library owns InstallDirDlg and a
+         second declaration of it collides, so a checkbox cannot be added to the standard install
+         page without replacing the whole dialog set for one control. Disproportionate. The Inno
+         package, which can do it in one line, offers the box; here it is a property, so anyone
+         deploying silently across a fleet can still say
+             msiexec /i LeapMotor-Mate.msi /qn DESKTOPSHORTCUT=0
+         and the icon is not created. -->
+    <Property Id="DESKTOPSHORTCUT" Value="1" />
+
     <!-- %LOCALAPPDATA%\Programs\LeapMotor Mate — local rather than roaming, for the same reason
          the app's data is: on a domain-joined machine a roaming profile is copied to the server
          at every sign-out, and neither a 70 MB app nor a driving history belongs on that trip. -->
@@ -59,6 +69,7 @@
     <StandardDirectory Id="ProgramMenuFolder">
       <Directory Id="AppShortcutDir" Name="LeapMotor Mate" />
     </StandardDirectory>
+    <StandardDirectory Id="DesktopFolder" />
 
     <!-- The whole PyInstaller output, harvested at build time. WiX 4 and later can take a
          directory tree directly; before that this needed a separate harvesting step whose output
@@ -75,6 +86,21 @@
       <RemoveFolder Id="RemoveAppShortcutDir" On="uninstall" />
       <RegistryValue Root="HKCU" Key="Software\ProtossBlaster\LeapMotor Mate"
                      Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- Installed only when the box on the install page was ticked, and removed with the app.
+         The registry value is the KeyPath rather than the .lnk: Windows Installer needs something
+         to tell "installed" from "not installed" for this component, and a shortcut the user is
+         free to delete or drag elsewhere is a poor witness. -->
+    <Component Directory="DesktopFolder" Guid="A5D0C6F1-7E24-4B33-9A18-3F6C0B4E8D27"
+               Condition="DESKTOPSHORTCUT = &quot;1&quot;">
+      <Shortcut Id="AppDesktopShortcut"
+                Name="LeapMotor Mate"
+                Description="Mate for your Leapmotor car"
+                Target="[INSTALLFOLDER]LeapMotor Mate.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKCU" Key="Software\ProtossBlaster\LeapMotor Mate"
+                     Name="desktopShortcut" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
     <!-- Take the start-at-login entry away on uninstall, by asking the app to undo its own
