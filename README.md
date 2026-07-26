@@ -1,0 +1,151 @@
+# LeapMotor Mate — desktop app
+
+[Mate](https://github.com/ProtossBlaster/leapmotor-mate) packaged as an ordinary desktop app, for
+people who don't run Home Assistant or Docker. Download, double-click, sign in with your Leapmotor
+account. Same Mate, same data, same updates — no containers, no add-ons, nothing to configure.
+
+> **Early build.** It works, and it has been tested end to end on both systems. Read *[What this
+> build is not](#what-this-build-is-not)* before installing: that section is the difference between
+> this being useful to you or a disappointment.
+
+---
+
+## Download
+
+| | |
+|---|---|
+| **Windows** | `LeapMotor Mate-Setup-<version>-x64.exe` — 64-bit, Windows 10 or later. Also installs on Windows on ARM. |
+| **macOS** | `LeapMotor-Mate-<version>-arm64.dmg` — **Apple Silicon only** (M1 and later). It will not open on an Intel Mac. |
+
+Both are on the [releases page](../../releases/latest).
+
+---
+
+## First launch
+
+Neither build is signed — code-signing certificates are a paid subscription per platform, and Mate
+is free. Both systems will therefore stop you once, and once only.
+
+### Windows
+
+Running the installer brings up a blue **"Windows protected your PC"** panel. That is SmartScreen
+saying it has not seen this file before, not that anything is wrong with it.
+
+1. Click **More info**.
+2. Click **Run anyway**.
+
+The installer needs no administrator rights: it installs under your own user account. If something
+ever asks you for an administrator password to install Mate, that is not Mate.
+
+### macOS
+
+1. Drag **LeapMotor Mate** onto **Applications**.
+2. Double-click it. macOS refuses, saying it cannot be checked for malicious software — click
+   **Done**, *not* "Move to Bin".
+3. Open  → **System Settings** → **Privacy & Security**, scroll down to **Security**. There is a
+   line about LeapMotor Mate being blocked, with **Open Anyway** next to it. Click it and confirm.
+
+> Right-click → Open, the old shortcut for this, no longer works on current macOS. The route
+> through System Settings is the one that does.
+
+---
+
+## Setting it up
+
+Two steps, the same as on Home Assistant or Docker, and the app walks you through both.
+
+**1 — The Leapmotor app certificate.** Mate asks for two files, `app.crt` and `app.key`. They are
+the same for everyone and have nothing to do with your account; the setup screen links straight to
+[markoceri/leapmotor-certs](https://github.com/markoceri/leapmotor-certs), where they live. Download
+both and drop them into the two boxes (or paste their text). Once only.
+
+*Why they aren't already inside the app:* they are not this project's to hand out, and a copy
+baked into a download would go quietly stale the day they are changed — with no way to tell from
+the outside why Mate had stopped working.
+
+**2 — Your Leapmotor account.** Email, password and operation PIN, the same as the official app.
+Mate detects your model and battery on its own.
+
+Then it starts recording.
+
+---
+
+## What this build is not
+
+**It is not a service. It records only while the app is open.** Close it and recording stops, like
+any other app you close. That matters more than it sounds: home charges usually happen overnight,
+so if the machine sleeps, those charges never appear — and they cannot be filled in afterwards,
+because the cloud keeps no history to replay.
+
+There is a **Start at login** switch in Settings, which helps but does not solve it. If you want
+Mate watching around the clock, run it on something that stays on — a Home Assistant box, a
+Raspberry Pi, a NAS — and use this build to try Mate out first. Your data comes with you:
+**Settings → Export database**.
+
+---
+
+## Where things are
+
+| | Windows | macOS |
+|---|---|---|
+| The app | `%LOCALAPPDATA%\Programs\LeapMotor Mate` | `/Applications` |
+| Your data | `%LOCALAPPDATA%\LeapMotorMate` | `~/Library/Application Support/LeapMotorMate` |
+| Removing the app | Settings ▸ Apps ▸ uninstall | drag to the Bin |
+
+**Uninstalling never touches your data**, on either system — that folder is years of driving
+history, and an uninstaller is no place to be asked a question whose wrong answer can't be undone.
+Reinstalling picks it up again exactly where it was. Delete the folder by hand if you do want it
+gone.
+
+Mate uses port 4000, or the next free one if something already has it. It talks to Leapmotor's
+cloud, to GitHub to check for updates, and to whichever optional services you switch on.
+
+---
+
+## Updates
+
+**Mate updates itself.** Each time you open it, it checks for a new release and fetches it before
+starting — a few megabytes, a second or two. Nothing to download by hand.
+
+What you download here is the *shell*: the runtime and the libraries. It changes rarely (six times
+in Mate's first 176 releases), which is why Mate can ship almost daily without you reinstalling
+anything. The badge next to the version tells you where you stand:
+
+- **amber** — a new Mate is out; it will be running the next time you open the app.
+- **red** — the new Mate needs a newer shell than this one. This is the only case where you have to
+  come back here and download the app again.
+
+If GitHub can't be reached, Mate starts on the version it already has.
+
+---
+
+## Building it yourself
+
+Both builds are the same shape: a Python environment holding Mate's own dependencies plus
+[pywebview](https://pywebview.flowrey.dev/), packaged with PyInstaller, carrying a seed copy of
+Mate so a fresh install works before it has ever reached the network.
+
+```bash
+git clone https://github.com/ProtossBlaster/leapmotor-mate.git ../leapmotor-mate
+python3 -m venv buildenv
+./buildenv/bin/python -m pip install \
+    -r ../leapmotor-mate/poller/requirements.txt \
+    -r ../leapmotor-mate/web/requirements.txt \
+    pywebview pyinstaller
+```
+
+Then `./build_mac.sh && ./make_dmg.sh` on an Apple Silicon Mac, or
+`powershell -ExecutionPolicy Bypass -File .\build_win.ps1` on 64-bit Windows (which also needs
+[Inno Setup 6](https://jrsoftware.org/isinfo.php) for the installer:
+`winget install --id JRSoftware.InnoSetup`).
+
+The build **refuses to package an app certificate** if it finds one — see `.gitignore` and the
+guard at the end of `build_win.ps1`.
+
+`.github/workflows/build.yml` does all of the above on a tag, on native runners for each platform.
+
+---
+
+## License
+
+AGPL-3.0, the same as Mate itself.

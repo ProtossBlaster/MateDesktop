@@ -1,0 +1,162 @@
+# Build both packages on native hardware and, on a tag, publish them.
+#
+# The Windows build has so far only ever been made inside a Parallels VM on an Apple Silicon Mac —
+# an ARM machine running an x64 Python under emulation. It produces the right artifact, but it is
+# a strange place for a release to come from, and it is the developer's laptop. Here each platform
+# is built on its own architecture: macos-14 is Apple Silicon, windows-latest is x64.
+#
+# The dependency list is not written down twice. It IS Mate's own requirements plus the two things
+# only the shell needs, which is the invariant the whole design rests on: a shell that can satisfy
+# every import the payload makes. Pinning a separate list here would let the two drift apart
+# silently, and the first sign would be somebody's app failing on an import after an update.
+name: build
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      mate_ref:
+        description: "Mate tag to seed the payload from (blank = its latest release)"
+        required: false
+        type: string
+
+permissions:
+  contents: write        # needed only by the release job
+
+env:
+  MATE_REPO_URL: https://github.com/ProtossBlaster/leapmotor-mate.git
+
+jobs:
+  macos:
+    name: macOS (Apple Silicon)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      # The seed payload always comes from a RELEASED Mate, never from whatever main happens to be
+      # mid-way through. It is only a seed — the app updates itself on first launch — but a build
+      # that shipped an untagged commit would be impossible to describe afterwards.
+      - name: Fetch Mate
+        run: |
+          git clone --quiet "$MATE_REPO_URL" mate-src
+          cd mate-src
+          REF="${{ inputs.mate_ref }}"
+          [ -n "$REF" ] || REF="$(git describe --tags --abbrev=0)"
+          git checkout --quiet "$REF"
+          echo "seeding from Mate $REF"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build environment
+        run: |
+          python -m venv buildenv
+          ./buildenv/bin/python -m pip install --quiet --upgrade pip
+          ./buildenv/bin/python -m pip install --quiet \
+            -r mate-src/poller/requirements.txt \
+            -r mate-src/web/requirements.txt \
+            pywebview pyinstaller pytest
+
+      - name: Unit tests
+        run: ./buildenv/bin/python -m pytest -q test_autostart.py test_plat_win.py
+
+      - name: Build the app and the disk image
+        env:
+          MATE_REPO: ${{ github.workspace }}/mate-src
+        run: |
+          ./build_mac.sh
+          ./make_dmg.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: dist/*.dmg
+          if-no-files-found: error
+
+  windows:
+    name: Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch Mate
+        shell: bash
+        run: |
+          git clone --quiet "$MATE_REPO_URL" mate-src
+          cd mate-src
+          REF="${{ inputs.mate_ref }}"
+          [ -n "$REF" ] || REF="$(git describe --tags --abbrev=0)"
+          git checkout --quiet "$REF"
+          echo "seeding from Mate $REF"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: x64
+
+      - name: Build environment
+        run: |
+          python -m venv buildenv
+          .\buildenv\Scripts\python.exe -m pip install --quiet --upgrade pip
+          .\buildenv\Scripts\python.exe -m pip install --quiet `
+            -r mate-src\poller\requirements.txt `
+            -r mate-src\web\requirements.txt `
+            pywebview pyinstaller pytest
+
+      - name: Unit tests
+        run: .\buildenv\Scripts\python.exe -m pytest -q test_autostart.py test_plat_win.py
+
+      # Present on some runner images and not others, and build_win.ps1 only WARNS when it is
+      # missing — which on a release run would mean an app with no installer and a green tick.
+      - name: Inno Setup
+        run: |
+          if (-not (Get-Command iscc.exe -ErrorAction SilentlyContinue)) {
+              choco install innosetup -y --no-progress
+          }
+          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
+      - name: Build the app and the installer
+        env:
+          MATE_REPO: ${{ github.workspace }}\mate-src
+        run: .\build_win.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: dist/*Setup*.exe
+          if-no-files-found: error
+
+  release:
+    name: Publish
+    needs: [macos, windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # Neither package is signed, so the only thing a careful person can check is the checksum.
+      # It is worth nothing unless it is published somewhere other than next to the file, which is
+      # what the release notes are for.
+      - name: Checksums
+        run: |
+          cd artifacts
+          find . -type f \( -name '*.dmg' -o -name '*.exe' \) -exec mv {} . \;
+          {
+            echo "### SHA-256"
+            echo '```'
+            sha256sum *.dmg *.exe
+            echo '```'
+          } > notes.md
+          cat notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*.dmg
+            artifacts/*.exe
+          body_path: artifacts/notes.md
+          draft: true         # a human reads it, adds the changelog, and presses publish
