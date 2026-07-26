@@ -55,11 +55,26 @@ is free. Both systems will therefore stop you once, and once only.
 
 ### Windows
 
-Running the installer brings up a blue **"Windows protected your PC"** panel. That is SmartScreen
-saying it has not seen this file before, not that anything is wrong with it.
+Windows objects twice, and the first time is *while the file is still downloading* — which reads
+like a failed download but isn't.
+
+**Downloading.** Edge or Chrome says the file **"isn't downloaded very often"** and appears to
+offer no way forward. Nothing has failed: the file is already on disk, and the browser is only
+saying it has not seen many people fetch this one yet. In the downloads list, click the **⋯**
+(or **⌃**) beside the file and choose **Keep** — then **Show more → Keep anyway** if a second
+panel appears.
+
+**Opening it.** A blue **"Windows protected your PC"** panel comes up.
 
 1. Click **More info**.
 2. Click **Run anyway**.
+
+Both are the same thing said twice: the installer is new and unsigned, so Windows has no
+reputation for it. Reputation is earned by downloads, so this fades as more people install it —
+and a code-signing certificate would remove it outright, which is a paid yearly subscription.
+
+This is worth knowing when somebody reports that the download "doesn't work": it almost always
+did, and they stopped at the warning.
 
 The installer needs no administrator rights: it installs under your own user account. If something
 ever asks you for an administrator password to install Mate, that is not Mate.
