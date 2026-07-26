@@ -9,6 +9,12 @@
 # closes it: it reads the `# v2` comment beside each SHA, and opens a PR that moves the SHA and the
 # comment together, with the action's release notes attached. Monthly on purpose: security fixes in
 # these actions are rare, and a weekly PR nobody reads is how a repo learns to ignore them.
+#
+# Minor and patch only. Left unfiltered, the first run proposed five MAJOR jumps at once, one of
+# them four versions wide (download-artifact 4 → 8) — the workflows had been sitting on tags their
+# authors had long moved past. A major bump can change behaviour, and this is the chain that builds
+# the installers and attests where they came from, so it is not something to accept from a bot.
+# Majors stay a decision somebody makes on purpose, having read the release notes.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -17,3 +23,6 @@ updates:
       interval: "monthly"
     commit-message:
       prefix: "ci"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
