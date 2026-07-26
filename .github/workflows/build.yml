@@ -22,7 +22,9 @@ on:
         type: string
 
 permissions:
-  contents: write        # needed only by the release job
+  contents: write        # the release job
+  id-token: write        # build provenance: GitHub signs the attestation with a short-lived token
+  attestations: write    # …and stores it against the repository
 
 env:
   MATE_REPO_URL: https://github.com/ProtossBlaster/leapmotor-mate.git
@@ -68,6 +70,19 @@ jobs:
         run: |
           ./build_mac.sh
           ./make_dmg.sh
+
+      # Provenance: a signed statement that THIS file came out of THIS commit, in this workflow,
+      # on GitHub's own runner. Free, and it is the part of "who made this" that does not depend
+      # on paying a certificate authority.
+      #
+      # What it is worth, honestly: an ordinary user will never run `gh attestation verify`, so
+      # this does nothing for them — only a code signature, which the operating system checks by
+      # itself, does. What it does do is make it impossible to publish a binary whose origin
+      # cannot be shown: no laptop build can carry one of these, so if a file has an attestation
+      # it was built here, from a commit anyone can read.
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/*.dmg
 
       - uses: actions/upload-artifact@v4
         with:
@@ -121,6 +136,12 @@ jobs:
         env:
           MATE_REPO: ${{ github.workspace }}\mate-src
         run: .\build_win.ps1
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/*.msi
+            dist/*Setup*.exe
 
       - uses: actions/upload-artifact@v4
         with:
