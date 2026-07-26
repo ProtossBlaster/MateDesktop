@@ -44,9 +44,9 @@ SHELL_VERSION = "1.0.0"
 # Where a NEW SHELL is downloaded from. Only ever shown when an update was REFUSED because this
 # shell is too old to run it — the one case the user has to act on. Mate cannot know this address:
 # the app is released on its own schedule, from its own repository, so the shell hands it over
-# (MATE_DESKTOP_DOWNLOAD_URL) rather than Mate hard-coding a guess. Points at Mate's own releases
-# until the app has a repository of its own — CHANGE THIS ONE LINE then, and nothing else.
-DOWNLOAD_URL = "https://github.com/ProtossBlaster/leapmotor-mate/releases/latest"
+# (MATE_DESKTOP_DOWNLOAD_URL) rather than Mate hard-coding a guess. Pointed at Mate's releases
+# until this app had a repository of its own; it has one now.
+DOWNLOAD_URL = "https://github.com/ProtossBlaster/MateDesktop/releases/latest"
 # MATE_APP_DIR exists so the update cycle can be exercised against a throwaway directory
 # without touching a real installation's database.
 APP_DIR = Path(os.environ.get("MATE_APP_DIR") or plat.data_dir())

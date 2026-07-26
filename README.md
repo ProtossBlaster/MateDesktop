@@ -17,7 +17,7 @@ account. Same Mate, same data, same updates — no containers, no add-ons, nothi
 | **Windows** | `LeapMotor Mate-Setup-<version>-x64.exe` — 64-bit, Windows 10 or later. Also installs on Windows on ARM. |
 | **macOS** | `LeapMotor-Mate-<version>-arm64.dmg` — **Apple Silicon only** (M1 and later). It will not open on an Intel Mac. |
 
-Both are on the [releases page](../../releases/latest).
+Both are on the [releases page](https://github.com/ProtossBlaster/MateDesktop/releases/latest).
 
 ### Checking what you downloaded
 
