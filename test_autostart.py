@@ -16,6 +16,14 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent / "mate_desktop"))
 import plat_mac as autostart  # noqa: E402
 
+# Both build jobs run this file, and on Windows two of these failed. Not a defect in the app:
+# plat.py loads plat_win there and never opens plat_mac at all. But plat_mac imports cleanly
+# anywhere, and disable() reaches for os.getuid() — which does not exist on Windows — so the
+# module was being asked to work on a system it is never asked to work on. Skip the file rather
+# than pad the module with defences against a platform that never reaches it.
+pytestmark = pytest.mark.skipif(sys.platform != "darwin",
+                                reason="plat_mac only ever runs on macOS")
+
 
 @pytest.fixture
 def home(tmp_path, monkeypatch):
