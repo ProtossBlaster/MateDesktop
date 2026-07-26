@@ -57,6 +57,11 @@ STAGED = PAYLOAD / "staged"
 DB_PATH = APP_DIR / "leapmotor_mate.db"
 LOG_PATH = APP_DIR / "desktop.log"
 RELAUNCH_CODE = 42          # same contract as run.sh: the app asking to be restarted
+# …and its sibling: the app asking to be REMOVED, data and all. Only Mate's own Settings sends it,
+# and only after a confirmation. It exists because macOS has no uninstaller to hook: an app is
+# dragged to the Bin, and the Bin knows nothing about Application Support. The only place left to
+# offer "take it all away" is inside the app itself.
+UNINSTALL_CODE = 43
 DEFAULT_PORT = 4000
 STARTUP_GRACE_S = 25        # how long a fresh payload gets to answer before we call it broken
 
@@ -183,6 +188,12 @@ def child_env(part: str, port: int) -> dict:
     # update this build fetches on its own.
     env["MATE_DESKTOP"] = "1"
     env["MATE_DESKTOP_VERSION"] = SHELL_VERSION
+    # Which desktop, because one thing genuinely differs. Windows has a real uninstaller in
+    # Settings ▸ Apps that already takes the data with it; macOS has none — an app is dragged to
+    # the Bin, and the Bin knows nothing about Application Support. So Mate offers "remove
+    # everything" on the Mac and stays quiet on Windows, where offering it would mean two ways to
+    # remove the same app with one of them hidden inside it.
+    env["MATE_DESKTOP_PLATFORM"] = plat.NAME
     # …and, when an update could NOT be taken, which one. That is the single case the user has to
     # act on, because it will never arrive by itself.
     if BLOCKED_UPDATE:
@@ -444,6 +455,7 @@ class Services(threading.Thread):
         # NB: not '_stop' — threading.Thread already has a private _stop() and shadowing
         # it breaks join(). Caught by the close-during-restart test, not by review.
         self._quit = threading.Event()
+        self.uninstall = False             # set when Mate asked to be removed (exit code 43)
         self._procs: list[subprocess.Popen] = []
         self._spawn_lock = threading.Lock()   # serialises "am I quitting?" against "start them"
 
@@ -498,6 +510,14 @@ class Services(threading.Thread):
 
             code = self._watch()
             if self._quit.is_set():
+                return
+            if code == UNINSTALL_CODE:
+                # Mate has been asked to remove itself. Close the window from here: nothing else
+                # will, and the alternative is a black rectangle the user has to dismiss by hand
+                # right after pressing a button that promised the app would go.
+                log("removal requested from Settings")
+                self.uninstall = True
+                window.close(log=log)
                 return
             if code != RELAUNCH_CODE:
                 self.exit_code = code
@@ -568,6 +588,8 @@ def main() -> int:
             use_browser = True
         else:
             shutdown()
+            if services.uninstall:
+                plat.remove_everything(APP_DIR, log=log)
             return 0
 
     log(f"opening {services.url} in the browser")

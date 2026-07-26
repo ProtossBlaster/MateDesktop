@@ -233,3 +233,20 @@ def stop_child(proc: subprocess.Popen) -> None:
     CREATE_NEW_PROCESS_GROUP plus CTRL_BREAK_EVENT, which the payload would have to handle.
     """
     proc.terminate()
+
+
+# ── Removing Mate for good ──────────────────────────────────────────────────────────────
+
+def remove_everything(app_dir, log=print) -> None:
+    """Not used on Windows, and deliberately a no-op that says so.
+
+    Windows has a real uninstaller, reached the way every other program is reached — Settings ▸
+    Apps — and it already takes the data with it (see the [UninstallDelete] section in
+    installer.iss and the RemoveUserData action in installer.wxs). Mate's Settings therefore does
+    not offer the button here: two ways to remove the same app, one of them hidden inside it, is
+    worse than one obvious way.
+
+    Kept so plat.py's interface is the same shape on both sides. If it is ever reached, something
+    has called it that should not have, and this line is how that gets noticed.
+    """
+    log("remove_everything: not used on Windows — the uninstaller in Settings > Apps does this")

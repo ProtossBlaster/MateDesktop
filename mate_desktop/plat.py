@@ -12,6 +12,7 @@ The interface, in full:
     autostart_sync(wanted, log)       → make "start at login" match the user's answer
     on_system_quit(callback, log)     → run callback when the OS asks the app to quit
     stop_child(proc)                  → ask a service process to stop, as politely as the OS allows
+    remove_everything(app_dir, log)   → take the data, and the app, away for good
 """
 from __future__ import annotations
 
@@ -30,6 +31,7 @@ acquire_single_instance = _impl.acquire_single_instance
 raise_running_instance = _impl.raise_running_instance
 autostart_sync = _impl.autostart_sync
 on_system_quit = _impl.on_system_quit
+remove_everything = _impl.remove_everything
 
 
 def stop_child(proc) -> None:

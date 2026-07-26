@@ -213,3 +213,63 @@ def on_system_quit(callback, log=print) -> None:
             _quit_watcher, "willTerminate:", NSApplicationWillTerminateNotification, None)
     except Exception as exc:                                  # noqa: BLE001
         log(f"system-quit hook unavailable ({exc}) — shutdown will be less tidy")
+
+
+# ── Removing Mate for good ──────────────────────────────────────────────────────────────
+
+def remove_everything(app_dir, log=print) -> None:
+    """Delete the data directory and put the app in the Bin.
+
+    This exists because macOS gives an unsigned, non-App-Store app nowhere else to do it. There is
+    no uninstaller: an app is dragged to the Bin, and the Bin has never heard of Application
+    Support — which is why a Mac accumulates folders belonging to programs it no longer has. (App
+    Store apps ARE different: they are sandboxed into ~/Library/Containers and deleting them from
+    Launchpad takes the container too. That is the behaviour people remember, and it does not
+    apply to us.)
+
+    So the only place left to offer it is inside the app, as its last act.
+
+    The data directory is deleted outright — it is Mate's own, and the user has just confirmed a
+    dialog that says so. The APP goes to the Bin rather than being deleted: emptying it is the
+    user's decision, not ours, and a 77 MB bundle sitting in the Bin is a recoverable mistake
+    while a deleted one is not.
+    """
+    import shutil
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    app_dir = Path(app_dir)
+    try:
+        if app_dir.name != APP_NAME or not app_dir.is_dir():
+            log(f"refusing to remove {app_dir} — not Mate's own data directory")
+        else:
+            shutil.rmtree(app_dir, ignore_errors=True)
+            log(f"removed {app_dir}")
+    except Exception as exc:                                   # noqa: BLE001
+        log(f"could not remove {app_dir}: {exc}")
+
+    # Only from a real .app; running from a checkout there is nothing to bin, and binning a
+    # developer's working copy would be a memorable way to lose an afternoon.
+    if not getattr(sys, "frozen", False):
+        log("running from source — leaving the working copy alone")
+        return
+    bundle = Path(sys.executable).resolve()
+    for parent in bundle.parents:
+        if parent.suffix == ".app":
+            bundle = parent
+            break
+    else:
+        log("not inside an .app bundle — nothing to move to the Bin")
+        return
+    try:
+        # Through the Finder, so it lands in the Bin with Put Back available, rather than being
+        # unlinked. Never fatal: the data is already gone, and a bundle left behind is something
+        # the user can drag away themselves.
+        subprocess.run(
+            ["osascript", "-e",
+             f'tell application "Finder" to delete POSIX file "{bundle}"'],
+            capture_output=True, timeout=30)
+        log(f"moved {bundle.name} to the Bin")
+    except Exception as exc:                                   # noqa: BLE001
+        log(f"could not move the app to the Bin: {exc}")

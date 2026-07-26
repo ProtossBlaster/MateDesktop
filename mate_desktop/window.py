@@ -72,6 +72,23 @@ def open_window(url: str, on_close=None, log=print) -> bool:
         return False
 
 
+def close(log=print) -> None:
+    """Shut the window from code, so the app can end itself.
+
+    Everything else that ends the app is started by the user — the red button, quitting, the
+    machine shutting down — and all of those already unblock webview.start() on their own. This
+    is for the one case that does not: Mate asking to be removed. Without it the services stop,
+    the page behind the window dies, and the user is left staring at a black rectangle they still
+    have to close by hand, having just pressed a button that said the app would go away.
+    """
+    try:
+        import webview
+        for win in list(webview.windows):
+            win.destroy()
+    except Exception as exc:                                  # noqa: BLE001
+        log(f"could not close the window ({exc})")
+
+
 def reload(url: str, log=print) -> None:
     """Point the open window at `url` again.
 
