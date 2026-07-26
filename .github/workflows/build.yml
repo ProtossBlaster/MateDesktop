@@ -171,11 +171,34 @@ jobs:
           Write-Host ("  {0}  {1} MB" -f $msi.Name, [math]::Round($msi.Length/1MB))
           Write-Host ("  {0}  {1} MB" -f $exe.Name, [math]::Round($exe.Length/1MB))
 
+      # What actually leaves this job is the zip, and the loose installers do not ship at all.
+      #
+      # Chromium puts .exe and .msi in a category that REQUIRES an explicit click before it will
+      # even give the file its name, whenever that file has no reputation — and a new unsigned
+      # installer never has any. What the person sees is a Downloads folder with no .msi and no
+      # .exe in it, just "Unconfirmed 123456.crdownload". That is indistinguishable from a failed
+      # download, and within an hour of the first release two people reported exactly that. Both
+      # files had arrived, complete, and were sitting there nameless.
+      #
+      # A .zip is not in that category. Tested rather than assumed, on a real Windows machine:
+      # the same installer, zipped, comes down under its own name and opens normally. The blue
+      # panel when you RUN it is untouched — that one is expected and people know it.
+      #
+      # Zipped HERE rather than at release time so the attestation below covers the file that is
+      # actually published: attesting the .msi and then shipping a .zip nobody attested would be
+      # a provenance claim about something the download page does not offer.
+      - name: Zip the installers
+        run: Get-ChildItem dist\*.msi, dist\*Setup*.exe | ForEach-Object {
+               Compress-Archive -Path $_.FullName -DestinationPath "$($_.FullName).zip" -Force }
+
       - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be  # v2
         with:
+          # The zips as well as what is inside them: the zip is what the release page hands out,
+          # so it is the zip somebody will run `gh attestation verify` against.
           subject-path: |
             dist/*.msi
             dist/*Setup*.exe
+            dist/*.zip
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
@@ -186,6 +209,7 @@ jobs:
           path: |
             dist/*.msi
             dist/*Setup*.exe
+            dist/*.zip
           if-no-files-found: error
 
   release:
@@ -214,9 +238,11 @@ jobs:
         # code signature, which the operating system checks by itself, does that.
         run: |
           cd artifacts
-          find . -type f \( -name '*.dmg' -o -name '*.exe' -o -name '*.msi' -o -name 'payload-seed.txt' \) -exec mv -f {} . \;
+          # The loose .msi and .exe are deliberately NOT collected: Windows ships zipped, for the
+          # reason set out in the Windows job. They stay behind as build artifacts on the run.
+          find . -type f \( -name '*.dmg' -o -name '*.zip' -o -name 'payload-seed.txt' \) -exec mv -f {} . \;
           rmdir */ 2>/dev/null || true
-          sha256sum *.dmg *.msi *.exe > SHA256SUMS
+          sha256sum *.dmg *.zip > SHA256SUMS
           {
             echo "Built from Mate **$(cat payload-seed.txt)**, which is the version inside the"
             echo "installer. The app fetches whatever is newest on first launch, so this only"
@@ -233,7 +259,7 @@ jobs:
             echo
             echo "**Windows** — in PowerShell, in the folder you downloaded to:"
             echo '```powershell'
-            echo 'Get-FileHash .\LeapMotor-Mate-*.msi -Algorithm SHA256 | Format-List'
+            echo 'Get-FileHash .\LeapMotor-Mate-*.zip -Algorithm SHA256 | Format-List'
             echo '```'
             echo
             echo "**macOS** — in Terminal:"
@@ -249,8 +275,7 @@ jobs:
         with:
           files: |
             artifacts/*.dmg
-            artifacts/*.msi
-            artifacts/*.exe
+            artifacts/*.zip
             artifacts/payload-seed.txt
             artifacts/SHA256SUMS
           body_path: artifacts/notes.md
