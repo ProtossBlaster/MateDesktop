@@ -59,10 +59,15 @@ Windows objects twice, and the first time is *while the file is still downloadin
 like a failed download but isn't.
 
 **Downloading.** Edge or Chrome says the file **"isn't downloaded very often"** and appears to
-offer no way forward. Nothing has failed: the file is already on disk, and the browser is only
-saying it has not seen many people fetch this one yet. In the downloads list, click the **⋯**
-(or **⌃**) beside the file and choose **Keep** — then **Show more → Keep anyway** if a second
-panel appears.
+offer no way forward. Look in your Downloads folder at that moment and there is no `.msi` and no
+`.exe` — only files called **`Unconfirmed 123456.crdownload`**. It looks exactly like a download
+that failed.
+
+It didn't. Those files are the complete download, byte for byte; the browser has simply withheld
+the real filename until you say you want it. Confirm it **in the browser's own downloads list**,
+not in the folder — there is nothing to do in the folder, which is where most people go looking.
+Click the **⋯** (or **⌃**) beside the file, choose **Keep**, and then **Show more → Keep anyway**
+if a second panel appears. The file takes its proper name at that point.
 
 **Opening it.** A blue **"Windows protected your PC"** panel comes up.
 
