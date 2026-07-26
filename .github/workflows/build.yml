@@ -143,10 +143,33 @@ jobs:
           }
           echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
 
+      # The same thought as Inno, which somebody had for one tool and not the other — and this is
+      # the one that bit: no WiX on the runner, build_win.ps1 warns instead of failing, and the
+      # first real release run went green carrying an .exe and no .msi at all. The .msi is the
+      # primary Windows download.
+      #
+      # Version 5 deliberately: 6 and later refuse to build until the Open Source Maintenance Fee
+      # licence is accepted, and accepting a licence on somebody's behalf is not a build step.
+      - name: WiX 5
+        run: dotnet tool install --global wix --version 5.0.2
+
       - name: Build the app and the installer
         env:
           MATE_REPO: ${{ github.workspace }}\mate-src
         run: .\build_win.ps1
+
+      # build_win.ps1 warns rather than fails when a toolchain is missing. That is right on a
+      # laptop, where you may only want the .exe, and wrong here: `if-no-files-found: error` on the
+      # upload does not help either, since one matching file satisfies it. A release that quietly
+      # ships half its installers is worse than one that does not ship.
+      - name: Both installers are actually there
+        run: |
+          $msi = Get-ChildItem dist\*.msi -ErrorAction SilentlyContinue
+          $exe = Get-ChildItem dist\*Setup*.exe -ErrorAction SilentlyContinue
+          if (-not $msi) { throw "no .msi in dist - WiX did not run" }
+          if (-not $exe) { throw "no setup .exe in dist - Inno did not run" }
+          Write-Host ("  {0}  {1} MB" -f $msi.Name, [math]::Round($msi.Length/1MB))
+          Write-Host ("  {0}  {1} MB" -f $exe.Name, [math]::Round($exe.Length/1MB))
 
       - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be  # v2
         with:
