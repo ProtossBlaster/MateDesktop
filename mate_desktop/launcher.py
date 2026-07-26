@@ -577,6 +577,7 @@ def main() -> int:
 
 
 REMOVE_AUTOSTART_FLAG = "--remove-autostart"
+UNINSTALL_FLAG = "--uninstall-cleanup"
 
 
 def remove_autostart() -> int:
@@ -598,15 +599,50 @@ def remove_autostart() -> int:
     return 0
 
 
+def uninstall_cleanup() -> int:
+    """Remove everything Mate keeps outside its own folder, and exit.
+
+    Uninstalling has to leave nothing behind — the data directory included. Silvio's call, and the
+    right one for Windows, where an application that survives its own removal is a bad citizen.
+
+    ⚠️ The CALLER is responsible for only invoking this on a REAL uninstall. A Windows Installer
+    major upgrade removes the old version before laying down the new one, so a cleanup wired to
+    "uninstall" alone would wipe the user's driving history on every single update — silently, and
+    with the new version starting up looking factory-fresh. installer.wxs conditions this on
+    REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE, which is the pair that tells the two apart.
+
+    Never fatal, and deliberately narrow: only APP_DIR, which is Mate's own directory and holds
+    nothing that was not put there by Mate.
+    """
+    try:
+        plat.autostart_sync(False, log=log)
+    except Exception as exc:                                   # noqa: BLE001
+        log(f"could not remove the start-at-login entry: {exc}")
+    target = APP_DIR
+    try:
+        # A last sanity check on the path before recursively deleting it. MATE_APP_DIR can point
+        # this anywhere, and "rm -rf $SOMETHING_UNSET" is a well-known way to ruin a machine.
+        if target.name != APP_NAME or not target.is_dir():
+            log(f"refusing to remove {target} — not Mate's own data directory")
+            return 0
+        shutil.rmtree(target, ignore_errors=True)
+        print(f"removed {target}", flush=True)
+    except Exception as exc:                                   # noqa: BLE001
+        print(f"could not remove {target}: {exc}", flush=True)
+    return 0
+
+
 if __name__ == "__main__":
     # Child dispatch must come first: this same binary is both the launcher and, re-run with
     # the marker argument, each of the two services.
     if len(sys.argv) > 3 and sys.argv[1] == CHILD_FLAG:
         sys.exit(run_as_child())
     # …and before anything that opens a window, takes the single-instance lock or touches the
-    # database: this runs while the app is being deleted from underneath it.
+    # database: these run while the app is being deleted from underneath it.
     if len(sys.argv) > 1 and sys.argv[1] == REMOVE_AUTOSTART_FLAG:
         sys.exit(remove_autostart())
+    if len(sys.argv) > 1 and sys.argv[1] == UNINSTALL_FLAG:
+        sys.exit(uninstall_cleanup())
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     try:
         sys.exit(main())

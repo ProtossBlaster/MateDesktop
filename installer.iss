@@ -110,8 +110,14 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; \
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; \
     Flags: nowait postinstall skipifsilent
 
-; NOTE — what uninstalling does NOT remove: %LOCALAPPDATA%\LeapMotorMate, which holds the
-; database, the certificates and the log. That is the user's driving history, sometimes years of
-; it, and an uninstaller is no place to be asked a question whose wrong answer cannot be undone.
-; Reinstalling finds it again exactly where it was. The readme says where it lives for anyone who
-; does want it gone.
+[UninstallDelete]
+; Uninstalling takes the data with it — the database, the certificate, the logs. Removing a
+; program on Windows leaves nothing behind; an application that survives its own uninstall is a
+; bad citizen, and reinstalling to start clean has to actually start clean.
+;
+; Safe to write plainly here, unlike in the .msi. Inno does NOT run the uninstaller when a newer
+; version is installed over an existing one — it installs on top — so this fires only when a
+; person genuinely removes Mate. Windows Installer has no such luxury: an upgrade there IS a
+; removal followed by an install, which is why installer.wxs conditions the same cleanup on
+; NOT UPGRADINGPRODUCTCODE.
+Type: filesandordirs; Name: "{localappdata}\LeapMotorMate"

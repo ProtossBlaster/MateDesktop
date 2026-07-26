@@ -99,8 +99,32 @@
                   ExeCommand="&quot;[INSTALLFOLDER]LeapMotor Mate.exe&quot; --remove-autostart"
                   Execute="immediate"
                   Return="ignore" />
+
+    <!-- Uninstalling takes the data with it: the database, the certificate, the logs. Removing a
+         program on Windows should leave nothing behind, and an application that survives its own
+         uninstall is a bad citizen.
+
+         The condition is the whole of it. Windows Installer has no notion of updating a product
+         in place: to move from 1.0 to 1.1 it installs the new one and then REMOVES THE OLD, and
+         that removal is a real uninstall with every uninstall step running. Conditioned on
+         REMOVE="ALL" alone, this would wipe the user's driving history on every single update,
+         and the new version would come up looking factory-fresh with nothing to explain it.
+         UPGRADINGPRODUCTCODE is set by Windows only during that removal-as-part-of-an-upgrade,
+         so NOT UPGRADINGPRODUCTCODE is what separates "the user is removing Mate" from "Windows
+         is clearing the way for the newer Mate".
+
+         Before RemoveFiles, because it runs the app's own executable — which RemoveFiles is about
+         to delete. -->
+    <CustomAction Id="RemoveUserData"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="&quot;[INSTALLFOLDER]LeapMotor Mate.exe&quot; --uninstall-cleanup"
+                  Execute="immediate"
+                  Return="ignore" />
+
     <InstallExecuteSequence>
       <Custom Action="RemoveAutostartEntry" Before="RemoveFiles" Condition="REMOVE=&quot;ALL&quot;" />
+      <Custom Action="RemoveUserData" After="RemoveAutostartEntry"
+              Condition="REMOVE=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
     </InstallExecuteSequence>
 
     <Component Directory="INSTALLFOLDER" Guid="F25CDB23-2900-425A-BF0B-0E4D996FB9B3">
