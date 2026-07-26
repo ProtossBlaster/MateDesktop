@@ -80,7 +80,7 @@ jobs:
       # itself, does. What it does do is make it impossible to publish a binary whose origin
       # cannot be shown: no laptop build can carry one of these, so if a file has an attestation
       # it was built here, from a commit anyone can read.
-      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be  # v2
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373  # v4.1.1
         with:
           subject-path: dist/*.dmg
 
@@ -137,7 +137,7 @@ jobs:
           MATE_REPO: ${{ github.workspace }}\mate-src
         run: .\build_win.ps1
 
-      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be  # v2
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373  # v4.1.1
         with:
           subject-path: |
             dist/*.msi
