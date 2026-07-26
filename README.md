@@ -14,11 +14,12 @@ account. Same Mate, same data, same updates — no containers, no add-ons, nothi
 
 | | |
 |---|---|
-| **Windows** | `LeapMotor-Mate-<version>-x64.msi` — 64-bit, Windows 10 or later. Installs on Windows on ARM too, through its x64 emulation, which needs **Windows 11**. |
+| **Windows** | `LeapMotor-Mate-<version>-x64.msi.zip` — 64-bit, Windows 10 or later. Unpack it and run the `.msi` inside. Installs on Windows on ARM too, through its x64 emulation, which needs **Windows 11**. |
 | **macOS** | `LeapMotor-Mate-<version>-arm64.dmg` — **Apple Silicon only** (M1 and later). It will not open on an Intel Mac. |
 
-There is also a `LeapMotor-Mate-Setup-<version>-x64.exe`: the same app in an Inno Setup installer
-rather than a Windows Installer package. Take the `.msi` unless you have a reason not to.
+There is also a `LeapMotor-Mate-Setup-<version>-x64.exe.zip`: the same app in an Inno Setup
+installer rather than a Windows Installer package. Take the `.msi` one unless you have a reason
+not to. Both are zipped — see below for why.
 
 Both are on the [releases page](https://github.com/ProtossBlaster/MateDesktop/releases/latest).
 
@@ -31,7 +32,7 @@ character for character.
 **Windows** — in PowerShell, in the folder you downloaded to:
 
 ```powershell
-Get-FileHash .\LeapMotor-Mate-*.msi -Algorithm SHA256 | Format-List
+Get-FileHash .\LeapMotor-Mate-*.zip -Algorithm SHA256 | Format-List
 ```
 
 **macOS** — in Terminal:
@@ -55,31 +56,25 @@ is free. Both systems will therefore stop you once, and once only.
 
 ### Windows
 
-Windows objects twice, and the first time is *while the file is still downloading* — which reads
-like a failed download but isn't.
+Windows comes as a **`.zip`**. Unpack it, then run the `.msi` inside.
 
-**Downloading.** Edge or Chrome says the file **"isn't downloaded very often"** and appears to
-offer no way forward. Look in your Downloads folder at that moment and there is no `.msi` and no
-`.exe` — only files called **`Unconfirmed 123456.crdownload`**. It looks exactly like a download
-that failed.
-
-It didn't. Those files are the complete download, byte for byte; the browser has simply withheld
-the real filename until you say you want it. Confirm it **in the browser's own downloads list**,
-not in the folder — there is nothing to do in the folder, which is where most people go looking.
-Click the **⋯** (or **⌃**) beside the file, choose **Keep**, and then **Show more → Keep anyway**
-if a second panel appears. The file takes its proper name at that point.
-
-**Opening it.** A blue **"Windows protected your PC"** panel comes up.
+Running it brings up a blue **"Windows protected your PC"** panel. That is SmartScreen saying it
+has not seen this file before, not that anything is wrong with it.
 
 1. Click **More info**.
 2. Click **Run anyway**.
 
-Both are the same thing said twice: the installer is new and unsigned, so Windows has no
-reputation for it. Reputation is earned by downloads, so this fades as more people install it —
-and a code-signing certificate would remove it outright, which is a paid yearly subscription.
+**Why the zip.** Chromium puts `.exe` and `.msi` in a category it will not even name until the
+person clicks to accept it, whenever the file has no reputation — which a new unsigned installer
+never has. The Downloads folder then holds no `.msi` and no `.exe`, only
+`Unconfirmed 123456.crdownload`, which is indistinguishable from a download that failed. Two
+people reported exactly that within an hour of the first release; both files had arrived,
+complete, and were sitting there nameless. A `.zip` is not in that category and comes down
+normally — tested on a real Windows machine, not assumed.
 
-This is worth knowing when somebody reports that the download "doesn't work": it almost always
-did, and they stopped at the warning.
+The panel above is what is left, and everybody knows that one. It comes from the installer being
+unsigned: Windows builds trust by counting downloads, so it fades as more people install it, and a
+code-signing certificate would remove it outright. That is a paid yearly subscription.
 
 The installer needs no administrator rights: it installs under your own user account. If something
 ever asks you for an administrator password to install Mate, that is not Mate.
