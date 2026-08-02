@@ -18,9 +18,17 @@ import fastapi               # noqa: F401
 import leapmotor_api         # noqa: F401
 import paho.mqtt.client      # noqa: F401
 import uvicorn               # noqa: F401
+# Pillow. It reaches the build anyway, as an extra of leapmotor-api[image] — which is exactly the
+# problem: it is here by luck, not by contract, and the day that extra changes shape nobody would
+# notice until an app died on a user's Mac. web/car_image.py imports PIL DIRECTLY as of Mate 3.4.10
+# (Image + ImageChops, to measure which way the charging animation runs), so the payload asks for it
+# in its own right now.
+import PIL.Image             # noqa: F401
+import PIL.ImageChops        # noqa: F401
 
 # Standard library. Frozen builds ship only what they can see being used, and a payload that
 # arrives later is invisible — so the ones the payload reaches for are named here.
+import __future__           # noqa: F401
 import asyncio               # noqa: F401
 import base64                # noqa: F401
 import calendar              # noqa: F401
@@ -37,6 +45,7 @@ import io                    # noqa: F401
 import json                  # noqa: F401
 import logging               # noqa: F401
 import math                  # noqa: F401
+import os                    # noqa: F401
 import pathlib               # noqa: F401
 import random                # noqa: F401
 import re                    # noqa: F401
@@ -45,7 +54,10 @@ import shutil                # noqa: F401
 import socket                # noqa: F401
 import sqlite3               # noqa: F401  ← the one that broke the first build
 import ssl                   # noqa: F401
+import statistics            # noqa: F401  ← db_reader, for the medians
 import threading             # noqa: F401
+import types                 # noqa: F401
+import typing                # noqa: F401
 import urllib.request        # noqa: F401
 import uuid                  # noqa: F401
 import xml.etree.ElementTree  # noqa: F401
