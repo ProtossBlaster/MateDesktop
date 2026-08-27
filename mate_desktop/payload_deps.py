@@ -62,4 +62,5 @@ import urllib.request        # noqa: F401
 import uuid                  # noqa: F401
 import xml.etree.ElementTree  # noqa: F401
 import zipfile               # noqa: F401
+import zlib                  # noqa: F401  ← db_reader gzip_db_stream (streamed .db.gz backup, disc #264)
 import zoneinfo              # noqa: F401
