@@ -12,7 +12,7 @@ REPO="${MATE_REPO:-$HOME/leapmotor-mate}"
 BUILD_PY="$HERE/buildenv/bin/python"
 OUT="$HERE/dist"
 
-[ -x "$BUILD_PY" ] || { echo "build venv missing — see the prototype notes"; exit 1; }
+[ -x "$BUILD_PY" ] || { echo "build venv missing — see README.md (requirements-shell.txt is required)"; exit 1; }
 [ -d "$REPO/web" ] || { echo "Mate source not found at $REPO"; exit 1; }
 
 echo "==> staging the seed payload from $REPO"

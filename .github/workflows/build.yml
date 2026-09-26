@@ -261,8 +261,8 @@ jobs:
           sha256sum *.dmg *.zip > SHA256SUMS
           {
             echo "Built from Mate **$(cat payload-seed.txt)**, which is the version inside the"
-            echo "installer. The app fetches whatever is newest on first launch, so this only"
-            echo "matters if you open it with no internet."
+            echo "installer. Automatic payload updates select newer stable releases only."
+            echo "A candidate payload requires an explicit seed or --payload-tag selection."
             echo
             echo "### Verifying what you downloaded"
             echo
@@ -296,3 +296,4 @@ jobs:
             artifacts/SHA256SUMS
           body_path: artifacts/notes.md
           draft: true         # a human reads it, adds the changelog, and presses publish
+          prerelease: ${{ contains(github.ref_name, '-') }}

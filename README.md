@@ -230,6 +230,20 @@ MATE_REPO=../leapmotor-mate ./buildenv/bin/python -m pytest -q test_payload_cont
 
 ---
 
+## Candidate version numbers
+
+| Component | Candidate version | Purpose |
+| --- | --- | --- |
+| MateDesktop shell | `1.1.0` (release tag `v1.1.0-rc.1`) | Python runtime, native libraries, launcher, and installers |
+| Mate payload | `4.0.0-rc.1` | Downloaded `web/` and `poller/` application |
+| Independent API | `0.1.0a8` | `leapmotor_cloud`, vendored within the Mate payload |
+
+The installer metadata stays numeric (`1.1.0`); the GitHub prerelease tag identifies
+this candidate. A Desktop shell version does not select the matching number of
+Mate or the API. Build with the Mate candidate checked out to seed it explicitly,
+or use `--payload-tag v4.0.0-rc.1` on a compatible shell. Stable users are not moved
+to candidates by automatic updates. See [candidate release notes](RELEASE_NOTES_v1.1.0-rc.1.md).
+
 ## Building it yourself
 
 Both builds are the same shape: a Python environment holding Mate's own dependencies plus
@@ -243,6 +257,22 @@ python3 -m venv buildenv
     -r ../leapmotor-mate/poller/requirements.txt \
     -r ../leapmotor-mate/web/requirements.txt \
     -r requirements-shell.txt
+```
+
+For this candidate, check out `v4.0.0-rc.1` in the Mate source before installing
+its requirements. `requirements-shell.txt` includes the legacy API required for
+3.x payload rollback. Both manual builds and CI use that same file; build scripts
+expect the environment to have been prepared and do not install dependencies.
+
+On Windows, prepare the equivalent environment in PowerShell:
+
+```powershell
+python -m venv buildenv
+.\buildenv\Scripts\python.exe -m pip install `
+    -r ..\leapmotor-mate\poller\requirements.txt `
+    -r ..\leapmotor-mate\web\requirements.txt `
+    -r requirements-shell.txt
+$env:MATE_REPO = (Resolve-Path ..\leapmotor-mate).Path
 ```
 
 Then `./build_mac.sh && ./make_dmg.sh` on an Apple Silicon Mac, or
