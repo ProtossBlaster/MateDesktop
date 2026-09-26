@@ -209,7 +209,40 @@ anything. The badge next to the version tells you where you stand:
 
 If GitHub can't be reached, Mate starts on the version it already has.
 
+Prereleases are never selected by the automatic updater. To test an exact candidate,
+quit the app and invoke its executable with `--payload-tag v4.0.0-rc.1` (on macOS,
+`"/Applications/LeapMotor Mate.app/Contents/MacOS/LeapMotor Mate" --payload-tag v4.0.0-rc.1`).
+The usual dependency checks and startup rollback still apply. The candidate stays installed
+until a newer stable release is published or you explicitly select another tag.
+`MATE_APP_DIR` can point to a disposable directory for testing without your normal data.
+Payload rollback restores code; the Mate 4 migration also saves a separate data backup.
+
+Mate 4 carries its independent API in `poller/vendor/leapmotor_cloud` and its adapter
+in `poller/mate_api_runtime`. Both travel with the payload. The shell continues carrying
+`leapmotor-api` solely so older payloads can still run after rollback. Rebuild the shell
+for Mate 4's additional standard library imports and native process locks.
+
+Run the contract and actual service startup checks with:
+
+```bash
+MATE_REPO=../leapmotor-mate ./buildenv/bin/python -m pytest -q test_payload_contract.py test_candidate_payload.py
+```
+
 ---
+
+## Candidate version numbers
+
+| Component | Candidate version | Purpose |
+| --- | --- | --- |
+| MateDesktop shell | `1.1.0` (release tag `v1.1.0-rc.1`) | Python runtime, native libraries, launcher, and installers |
+| Mate payload | `4.0.0-rc.1` | Downloaded `web/` and `poller/` application |
+| Independent API | `0.1.0a8` | `leapmotor_cloud`, vendored within the Mate payload |
+
+The installer metadata stays numeric (`1.1.0`); the GitHub prerelease tag identifies
+this candidate. A Desktop shell version does not select the matching number of
+Mate or the API. Build with the Mate candidate checked out to seed it explicitly,
+or use `--payload-tag v4.0.0-rc.1` on a compatible shell. Stable users are not moved
+to candidates by automatic updates. See [candidate release notes](RELEASE_NOTES_v1.1.0-rc.1.md).
 
 ## Building it yourself
 
@@ -223,7 +256,23 @@ python3 -m venv buildenv
 ./buildenv/bin/python -m pip install \
     -r ../leapmotor-mate/poller/requirements.txt \
     -r ../leapmotor-mate/web/requirements.txt \
-    pywebview pyinstaller
+    -r requirements-shell.txt
+```
+
+For this candidate, check out `v4.0.0-rc.1` in the Mate source before installing
+its requirements. `requirements-shell.txt` includes the legacy API required for
+3.x payload rollback. Both manual builds and CI use that same file; build scripts
+expect the environment to have been prepared and do not install dependencies.
+
+On Windows, prepare the equivalent environment in PowerShell:
+
+```powershell
+python -m venv buildenv
+.\buildenv\Scripts\python.exe -m pip install `
+    -r ..\leapmotor-mate\poller\requirements.txt `
+    -r ..\leapmotor-mate\web\requirements.txt `
+    -r requirements-shell.txt
+$env:MATE_REPO = (Resolve-Path ..\leapmotor-mate).Path
 ```
 
 Then `./build_mac.sh && ./make_dmg.sh` on an Apple Silicon Mac, or

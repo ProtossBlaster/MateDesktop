@@ -21,6 +21,7 @@ import shutil
 import tarfile
 import tempfile
 import urllib.request
+import urllib.parse
 from pathlib import Path
 
 RELEASES_API = "https://api.github.com/repos/ProtossBlaster/leapmotor-mate/releases/latest"
@@ -39,6 +40,12 @@ def version_tuple(v: str) -> tuple:
         m = re.match(r"\d+", part)
         out.append(int(m.group()) if m else 0)
     return tuple(out) or (0,)
+
+
+def release_order(version: str) -> tuple:
+    """Order a stable release after its RCs without changing dependency comparisons."""
+    core, _, prerelease = str(version).lstrip("vV").partition("-")
+    return (version_tuple(core), not bool(prerelease), version_tuple(prerelease))
 
 
 def payload_version(payload_dir: Path) -> str | None:
@@ -71,6 +78,13 @@ def _latest(api: str) -> dict | None:
 def latest_release() -> dict | None:
     """The newest Mate. This is the payload the app swaps in on its own."""
     return _latest(RELEASES_API)
+
+
+def release_for_tag(tag: str) -> dict | None:
+    """Resolve only an explicitly requested candidate; automatic updates stay stable."""
+    api = RELEASES_API.rsplit("/", 1)[0] + "/tags/" + urllib.parse.quote(tag, safe="")
+    release = _latest(api)
+    return release if release and release["tag"] == tag else None
 
 
 def newer_shell(current: str) -> str | None:

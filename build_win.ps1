@@ -22,7 +22,7 @@ $Repo = if ($env:MATE_REPO)                                 { $env:MATE_REPO }
 $BuildPy = Join-Path $Here "buildenv\Scripts\python.exe"
 $Out = Join-Path $Here "dist"
 
-if (-not (Test-Path $BuildPy)) { throw "build venv missing - see the notes in STATO.md" }
+if (-not (Test-Path $BuildPy)) { throw "build venv missing - see README.md (requirements-shell.txt is required)" }
 if (-not (Test-Path (Join-Path $Repo "web"))) { throw "Mate source not found at $Repo" }
 
 Write-Host "==> staging the seed payload from $Repo"
