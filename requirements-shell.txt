@@ -1,0 +1,4 @@
+# Retained for 3.x payload rollback; Mate 4 vendors leapmotor_cloud in its source.
+leapmotor-api[image]==0.3.1
+pywebview
+pyinstaller

@@ -42,10 +42,11 @@ def _declared() -> set[str]:
     return out
 
 
-def _payload_imports() -> tuple[set[str], set[str]]:
+def _payload_imports(root: pathlib.Path = MATE) -> tuple[set[str], set[str]]:
     """(every top-level module the payload imports, its own local modules)."""
-    files = [p for d in ("web", "poller") for p in (MATE / d).rglob("*.py")]
+    files = [p for d in ("web", "poller") for p in (root / d).rglob("*.py")]
     local = {p.stem for p in files}
+    local |= {p.parent.name for p in files if p.name == "__init__.py"}
     used: set[str] = set()
     for p in files:
         try:
@@ -79,6 +80,22 @@ def test_the_contract_does_not_name_things_the_payload_stopped_using():
     """The other direction, as a warning rather than a rule: a name that no longer appears makes
     the frozen build bigger for nothing, and makes the contract harder to trust."""
     used, _ = _payload_imports()
-    stale = sorted(_declared() - used - SHELL_ONLY)
+    # The same shell supports both 3.x rollback and 4.x candidates. These API
+    # imports need to remain even when this check runs against a 3.x seed.
+    compatibility = {"leapmotor_api", "ctypes", "argparse", "binascii", "copy",
+                     "errno", "functools", "http", "stat", "sys", "tempfile",
+                     "time", "msvcrt", "fcntl"}
+    stale = sorted(_declared() - used - SHELL_ONLY - compatibility)
     assert not stale, ("payload_deps.py names modules the payload no longer imports: "
                        + ", ".join(stale))
+
+
+def test_vendored_packages_are_payload_local(tmp_path):
+    package = tmp_path / "poller" / "vendor" / "leapmotor_cloud"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("from .client import Client\n")
+    (package / "client.py").write_text("import cryptography\n")
+    (tmp_path / "poller" / "main.py").write_text("from leapmotor_cloud import Client\n")
+    used, local = _payload_imports(tmp_path)
+    assert "leapmotor_cloud" in used & local
+    assert "cryptography" in used - local

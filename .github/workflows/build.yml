@@ -5,8 +5,8 @@
 # a strange place for a release to come from, and it is the developer's laptop. Here each platform
 # is built on its own architecture: macos-14 is Apple Silicon, windows-latest is x64.
 #
-# The dependency list is not written down twice. It IS Mate's own requirements plus the two things
-# only the shell needs, which is the invariant the whole design rests on: a shell that can satisfy
+# The payload dependencies come from Mate; requirements-shell.txt keeps the build tools and
+# the legacy API needed for rollback, which is the invariant the whole design rests on: a shell that can satisfy
 # every import the payload makes. Pinning a separate list here would let the two drift apart
 # silently, and the first sign would be somebody's app failing on an import after an update.
 name: build
@@ -64,10 +64,12 @@ jobs:
           ./buildenv/bin/python -m pip install --quiet \
             -r mate-src/poller/requirements.txt \
             -r mate-src/web/requirements.txt \
-            pywebview pyinstaller pytest
+            -r requirements-shell.txt pytest
 
       - name: Unit tests
-        run: ./buildenv/bin/python -m pytest -q test_autostart.py test_plat_win.py
+        env:
+          MATE_REPO: ${{ github.workspace }}/mate-src
+        run: ./buildenv/bin/python -m pytest -q test_autostart.py test_plat_win.py test_payload_contract.py test_candidate_payload.py
 
       - name: Build the app and the disk image
         env:
@@ -75,6 +77,12 @@ jobs:
         run: |
           ./build_mac.sh
           ./make_dmg.sh
+
+      - name: Frozen payload startup
+        env:
+          MATE_REPO: ${{ github.workspace }}/mate-src
+          MATE_FROZEN_EXECUTABLE: ${{ github.workspace }}/dist/LeapMotor Mate.app/Contents/MacOS/LeapMotor Mate
+        run: ./buildenv/bin/python -m pytest -q test_candidate_payload.py -k real_payload
 
       # Provenance: a signed statement that THIS file came out of THIS commit, in this workflow,
       # on GitHub's own runner. Free, and it is the part of "who made this" that does not depend
@@ -129,10 +137,12 @@ jobs:
           .\buildenv\Scripts\python.exe -m pip install --quiet `
             -r mate-src\poller\requirements.txt `
             -r mate-src\web\requirements.txt `
-            pywebview pyinstaller pytest
+            -r requirements-shell.txt pytest
 
       - name: Unit tests
-        run: .\buildenv\Scripts\python.exe -m pytest -q test_autostart.py test_plat_win.py
+        env:
+          MATE_REPO: ${{ github.workspace }}/mate-src
+        run: .\buildenv\Scripts\python.exe -m pytest -q test_autostart.py test_plat_win.py test_payload_contract.py test_candidate_payload.py
 
       # Present on some runner images and not others, and build_win.ps1 only WARNS when it is
       # missing — which on a release run would mean an app with no installer and a green tick.
@@ -157,6 +167,12 @@ jobs:
         env:
           MATE_REPO: ${{ github.workspace }}\mate-src
         run: .\build_win.ps1
+
+      - name: Frozen payload startup
+        env:
+          MATE_REPO: ${{ github.workspace }}/mate-src
+          MATE_FROZEN_EXECUTABLE: ${{ github.workspace }}/dist/LeapMotor Mate/LeapMotor Mate.exe
+        run: .\buildenv\Scripts\python.exe -m pytest -q test_candidate_payload.py -k real_payload
 
       # build_win.ps1 warns rather than fails when a toolchain is missing. That is right on a
       # laptop, where you may only want the .exe, and wrong here: `if-no-files-found: error` on the

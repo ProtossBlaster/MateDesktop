@@ -234,14 +234,15 @@ def ensure_payload(log=log) -> None:
     log(f"first run — installed bundled payload {updater.payload_version(CURRENT)}")
 
 
-def try_update(log=log) -> bool:
+def try_update(log=log, *, payload_tag: str | None = None) -> bool:
     """Fetch a newer payload if there is one and this shell can run it. Never fatal."""
     have = updater.payload_version(CURRENT)
-    rel = updater.latest_release()
+    rel = updater.release_for_tag(payload_tag) if payload_tag else updater.latest_release()
     if not rel or not rel.get("version"):
         log("update check skipped (GitHub unreachable)")
         return False
-    if updater.version_tuple(rel["version"]) <= updater.version_tuple(have or "0"):
+    if ((payload_tag and rel["version"] == have) or
+            (not payload_tag and updater.release_order(rel["version"]) <= updater.release_order(have or "0"))):
         log(f"up to date ({have})")
         return False
 
@@ -555,7 +556,11 @@ class Services(threading.Thread):
         return 0
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    import argparse
+    parser = argparse.ArgumentParser(description="LeapMotor Mate desktop")
+    parser.add_argument("--payload-tag", help="Explicit release tag to try (including prereleases)")
+    args = parser.parse_args(argv)
     APP_DIR.mkdir(parents=True, exist_ok=True)
     if not plat.acquire_single_instance(APP_DIR):
         log("Mate is already running — bringing that window to the front")
@@ -565,8 +570,8 @@ def main() -> int:
     ensure_payload()
 
     fresh = False
-    if os.environ.get("MATE_SKIP_UPDATE") != "1":
-        fresh = try_update()
+    if args.payload_tag or os.environ.get("MATE_SKIP_UPDATE") != "1":
+        fresh = try_update(payload_tag=args.payload_tag)
         # …and, while we are talking to GitHub anyway, ask whether a newer SHELL exists. One extra
         # request on a launch that already makes one, and it closes the gap where a fix here
         # reached nobody who was not already looking for it.

@@ -64,3 +64,23 @@ import xml.etree.ElementTree  # noqa: F401
 import zipfile               # noqa: F401
 import zlib                  # noqa: F401  ← db_reader gzip_db_stream (streamed .db.gz backup, disc #264)
 import zoneinfo              # noqa: F401
+
+# Mate 4's vendored API and migration adapter. Keep leapmotor_api above so a
+# rejected candidate can still roll back to the previous 3.x payload.
+import argparse              # noqa: F401
+import binascii              # noqa: F401
+import copy                  # noqa: F401
+import ctypes                # noqa: F401
+import ctypes.wintypes       # noqa: F401
+import errno                 # noqa: F401
+import functools             # noqa: F401
+import http.client           # noqa: F401
+import stat                  # noqa: F401
+import sys                   # noqa: F401
+import tempfile              # noqa: F401
+import time                  # noqa: F401
+
+if sys.platform == "win32":
+    import msvcrt            # noqa: F401
+else:
+    import fcntl             # noqa: F401

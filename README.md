@@ -209,6 +209,25 @@ anything. The badge next to the version tells you where you stand:
 
 If GitHub can't be reached, Mate starts on the version it already has.
 
+Prereleases are never selected by the automatic updater. To test an exact candidate,
+quit the app and invoke its executable with `--payload-tag v4.0.0-rc.1` (on macOS,
+`"/Applications/LeapMotor Mate.app/Contents/MacOS/LeapMotor Mate" --payload-tag v4.0.0-rc.1`).
+The usual dependency checks and startup rollback still apply. The candidate stays installed
+until a newer stable release is published or you explicitly select another tag.
+`MATE_APP_DIR` can point to a disposable directory for testing without your normal data.
+Payload rollback restores code; the Mate 4 migration also saves a separate data backup.
+
+Mate 4 carries its independent API in `poller/vendor/leapmotor_cloud` and its adapter
+in `poller/mate_api_runtime`. Both travel with the payload. The shell continues carrying
+`leapmotor-api` solely so older payloads can still run after rollback. Rebuild the shell
+for Mate 4's additional standard library imports and native process locks.
+
+Run the contract and actual service startup checks with:
+
+```bash
+MATE_REPO=../leapmotor-mate ./buildenv/bin/python -m pytest -q test_payload_contract.py test_candidate_payload.py
+```
+
 ---
 
 ## Building it yourself
@@ -223,7 +242,7 @@ python3 -m venv buildenv
 ./buildenv/bin/python -m pip install \
     -r ../leapmotor-mate/poller/requirements.txt \
     -r ../leapmotor-mate/web/requirements.txt \
-    pywebview pyinstaller
+    -r requirements-shell.txt
 ```
 
 Then `./build_mac.sh && ./make_dmg.sh` on an Apple Silicon Mac, or
