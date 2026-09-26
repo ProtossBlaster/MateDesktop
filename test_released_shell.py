@@ -155,3 +155,35 @@ assert marker.read_bytes() == b'original database and credentials'
 result = {'restored': True, 'exit_code': service.exit_code}
 ''')
     assert result == {'restored': True, 'exit_code': 0}
+
+
+def test_released_shell_selects_legacy_after_nested_preflight_failure(installed):
+    """The installed binary can run the bounded worker and retain a working SDK."""
+    result = probe(installed, '''
+import os, sqlite3
+from cryptography.fernet import Fernet
+app = pathlib.Path(os.environ['MATE_APP_DIR'])
+database = pathlib.Path(os.environ['DB_PATH'])
+key = Fernet.generate_key()
+(app / 'secret.key').write_bytes(key)
+with sqlite3.connect(database) as db:
+    db.execute('CREATE TABLE settings(key TEXT PRIMARY KEY,value TEXT)')
+    db.executemany('INSERT INTO settings VALUES (?,?)', [('leapmotor_user','fixture@example.invalid'), ('leapmotor_pass','fixture-password')])
+    db.execute('CREATE TABLE trips(id INTEGER PRIMARY KEY,distance REAL)')
+    db.execute('INSERT INTO trips VALUES (7,123.5)')
+# No application certificate exists, so qualification fails before network I/O.
+import mate_api
+import api_backend
+import leapmotor_api
+assert api_backend.LeapmotorApiClient is leapmotor_api.LeapmotorApiClient
+assert os.environ['MATE_API_V2'] == '0'
+with sqlite3.connect(database) as db:
+    values = dict(db.execute('SELECT key,value FROM settings'))
+    assert values['leapmotor_user'] == 'fixture@example.invalid'
+    assert values['leapmotor_pass'] == 'fixture-password'
+    assert db.execute('SELECT * FROM trips').fetchall() == [(7,123.5)]
+assert (app / 'secret.key').read_bytes() == key
+assert (app / 'migration-backups' / 'mate-4.0.0' / 'complete.json').is_file()
+result = {'backend': 'legacy', 'data_preserved': True}
+''')
+    assert result == {'backend': 'legacy', 'data_preserved': True}
