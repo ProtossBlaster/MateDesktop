@@ -76,6 +76,7 @@ import errno                 # noqa: F401
 import functools             # noqa: F401
 import http.client           # noqa: F401
 import stat                  # noqa: F401
+import subprocess            # noqa: F401
 import sys                   # noqa: F401
 import tempfile              # noqa: F401
 import time                  # noqa: F401
