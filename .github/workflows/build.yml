@@ -17,8 +17,9 @@ on:
   workflow_dispatch:
     inputs:
       mate_ref:
-        description: "Mate tag to seed the payload from (blank = its latest release)"
+        description: "Mate tag to seed the payload from (default: v4.0.0)"
         required: false
+        default: v4.0.0
         type: string
 
 permissions:
@@ -28,6 +29,7 @@ permissions:
 
 env:
   MATE_REPO_URL: https://github.com/ProtossBlaster/leapmotor-mate.git
+  DEFAULT_MATE_REF: v4.0.0
 
 jobs:
   macos:
@@ -44,7 +46,7 @@ jobs:
           git clone --quiet "$MATE_REPO_URL" mate-src
           cd mate-src
           REF="${{ inputs.mate_ref }}"
-          [ -n "$REF" ] || REF="$(git describe --tags --abbrev=0)"
+          [ -n "$REF" ] || REF="$DEFAULT_MATE_REF"
           git checkout --quiet "$REF"
           echo "seeding from Mate $REF"
           # Published beside the packages so Mate's own CI can read it back. The shell carries
@@ -121,7 +123,7 @@ jobs:
           git clone --quiet "$MATE_REPO_URL" mate-src
           cd mate-src
           REF="${{ inputs.mate_ref }}"
-          [ -n "$REF" ] || REF="$(git describe --tags --abbrev=0)"
+          [ -n "$REF" ] || REF="$DEFAULT_MATE_REF"
           git checkout --quiet "$REF"
           echo "seeding from Mate $REF"
 

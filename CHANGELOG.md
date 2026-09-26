@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0
+
+- Default new installer builds to the released Mate 4.0.0 payload.
+- Verify Mate 4 against the actual released Desktop 1.0 binaries on native macOS
+  and Windows, including migration worker startup and legacy compatibility selection.
+- Existing Desktop 1.0 users receive Mate 4 through the normal payload update;
+  upgrading the shell is optional.
+- Preserve the legacy API for accounts that cannot yet qualify for the independent
+  API and for payload rollback. Existing account settings and history remain in place.
+
+
 ## 1.1.0-rc.1
 
 The shell and installer metadata use numeric version **1.1.0**. This candidate

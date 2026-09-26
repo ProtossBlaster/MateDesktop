@@ -209,6 +209,15 @@ anything. The badge next to the version tells you where you stand:
 
 If GitHub can't be reached, Mate starts on the version it already has.
 
+**Mate 4.0.0 also reaches installed Desktop 1.0 through this normal update.**
+No shell reinstall, certificate upload, account setup, export/import or migration
+command is required. Existing settings, encryption key and history stay in place.
+Mate checks the new API using a private snapshot before selecting it. Accounts
+that cannot complete that check, including REEV or mixed-model accounts outside
+its qualified coverage, automatically retain the compatible legacy API. This
+selection happens at startup; vehicle commands are never replayed through another API.
+Desktop 1.1.0 is an optional shell update and the installer for new users.
+
 Prereleases are never selected by the automatic updater. To test an exact candidate,
 quit the app and invoke its executable with `--payload-tag v4.0.0-rc.1` (on macOS,
 `"/Applications/LeapMotor Mate.app/Contents/MacOS/LeapMotor Mate" --payload-tag v4.0.0-rc.1`).
@@ -219,8 +228,10 @@ Payload rollback restores code; the Mate 4 migration also saves a separate data 
 
 Mate 4 carries its independent API in `poller/vendor/leapmotor_cloud` and its adapter
 in `poller/mate_api_runtime`. Both travel with the payload. The shell continues carrying
-`leapmotor-api` solely so older payloads can still run after rollback. Rebuild the shell
-for Mate 4's additional standard library imports and native process locks.
+`leapmotor-api` for automatic compatibility selection and older payload rollback.
+Compatibility tests exercise the actual released Desktop 1.0 executables on
+macOS and Windows, including private storage, process locks and migration
+subprocesses; installed users do not need a rebuilt shell for Mate 4.
 
 Run the contract and actual service startup checks with:
 
@@ -230,19 +241,18 @@ MATE_REPO=../leapmotor-mate ./buildenv/bin/python -m pytest -q test_payload_cont
 
 ---
 
-## Candidate version numbers
+## Release version numbers
 
-| Component | Candidate version | Purpose |
+| Component | Stable release | Purpose |
 | --- | --- | --- |
-| MateDesktop shell | `1.1.0` (release tag `v1.1.0-rc.1`) | Python runtime, native libraries, launcher, and installers |
-| Mate payload | `4.0.0-rc.1` | Downloaded `web/` and `poller/` application |
-| Independent API | `0.1.0a8` | `leapmotor_cloud`, vendored within the Mate payload |
+| MateDesktop shell | `1.1.0` | Python runtime, native libraries, launcher, and installers |
+| Mate payload | `4.0.0` | Downloaded `web/` and `poller/` application |
 
-The installer metadata stays numeric (`1.1.0`); the GitHub prerelease tag identifies
-this candidate. A Desktop shell version does not select the matching number of
-Mate or the API. Build with the Mate candidate checked out to seed it explicitly,
-or use `--payload-tag v4.0.0-rc.1` on a compatible shell. Stable users are not moved
-to candidates by automatic updates. See [candidate release notes](RELEASE_NOTES_v1.1.0-rc.1.md).
+The two versions are independent. Desktop 1.1.0 builds default to the released
+Mate `v4.0.0` seed; `payload-seed.txt` records the exact seed shipped in each
+release. Existing Desktop 1.0 installations receive the same payload through
+normal updates. See [stable release notes](RELEASE_NOTES_v1.1.0.md).
+The [RC notes](RELEASE_NOTES_v1.1.0-rc.1.md) describe the earlier opt-in test only.
 
 ## Building it yourself
 
@@ -259,9 +269,9 @@ python3 -m venv buildenv
     -r requirements-shell.txt
 ```
 
-For this candidate, check out `v4.0.0-rc.1` in the Mate source before installing
+For this release, check out `v4.0.0` in the Mate source before installing
 its requirements. `requirements-shell.txt` includes the legacy API required for
-3.x payload rollback. Both manual builds and CI use that same file; build scripts
+automatic compatibility selection and 3.x payload rollback. Both manual builds and CI use that same file; build scripts
 expect the environment to have been prepared and do not install dependencies.
 
 On Windows, prepare the equivalent environment in PowerShell:
