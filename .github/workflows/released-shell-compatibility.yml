@@ -1,0 +1,71 @@
+name: Released Desktop 1.0 compatibility
+on:
+  workflow_dispatch:
+    inputs:
+      mate_ref:
+        description: Exact Mate commit or tag to verify on installed Desktop 1.0
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  installed-shell:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: ProtossBlaster/leapmotor-mate
+          ref: ${{ inputs.mate_ref }}
+          path: mate-src
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Download the actual released macOS app
+        if: runner.os == 'macOS'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir released
+          gh release download v1.0.0 --repo ProtossBlaster/MateDesktop --pattern '*arm64.dmg' --dir released
+          echo 'aa33b85034020b0c035837b591a4c34967474c3ddaf45ba283e6b7640c447e17  released/LeapMotor-Mate-1.0.0-arm64.dmg' | shasum -a 256 -c -
+          hdiutil attach -nobrowse -readonly -mountpoint "$RUNNER_TEMP/mate-v1" released/*.dmg
+          echo "MATE_FROZEN_EXECUTABLE=$RUNNER_TEMP/mate-v1/LeapMotor Mate.app/Contents/MacOS/LeapMotor Mate" >> "$GITHUB_ENV"
+      - name: Extract the actual released Windows app without installation
+        if: runner.os == 'Windows'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory released | Out-Null
+          gh release download v1.0.0 --repo ProtossBlaster/MateDesktop --pattern '*msi.zip' --dir released
+          $zip = Get-Item released/*.zip
+          if ((Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() -ne 'b1aae24d3bb319c7d8d5105a4076cca728435cf5bd33830ba0c9ef49ea0fe01d') { throw 'Released binary checksum mismatch' }
+          Expand-Archive $zip.FullName released/unpacked
+          $msi = (Get-Item released/unpacked/*.msi).FullName
+          $target = Join-Path $env:RUNNER_TEMP 'mate-v1'
+          $process = Start-Process msiexec.exe -ArgumentList "/a `"$msi`" /qn TARGETDIR=`"$target`"" -PassThru -Wait
+          if ($process.ExitCode -ne 0) { throw "MSI extraction failed: $($process.ExitCode)" }
+          $app = @(Get-ChildItem $target -Recurse -Filter 'LeapMotor Mate.exe')
+          if ($app.Count -ne 1) { throw 'Expected exactly one released app' }
+          "MATE_FROZEN_EXECUTABLE=$($app[0].FullName)" >> $env:GITHUB_ENV
+      - name: Frozen requirements, private storage, startup and automatic rollback
+        env:
+          MATE_REPO: ${{ github.workspace }}/mate-src
+        run: python -m pytest -q test_released_shell.py --basetemp=proof-data --junitxml=proof-results.xml
+      - name: Preserve native proof and diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: desktop-1.0-proof-${{ runner.os }}
+          path: |
+            proof-results.xml
+            proof-data/**/*.log
+            proof-data/**/probe.json
