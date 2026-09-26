@@ -290,3 +290,25 @@ guard at the end of `build_win.ps1`.
 ## License
 
 AGPL-3.0, the same as Mate itself.
+
+### Prove compatibility with already installed Desktop 1.0
+
+`released-shell-compatibility.yml` accepts an exact Mate commit/tag and runs on
+native macOS ARM64 and Windows x64. It downloads the actual published Desktop
+1.0 packages, verifies their pinned SHA-256 hashes, and extracts them without
+installing a replacement shell. It tests the old bundled dependency guard,
+new payload imports, private directory permissions and process locks, both real
+payload entrypoints, and the 1.0 supervisor's automatic startup rollback.
+
+The rollback probe uses the original tagged 1.0 supervisor source inside the
+released frozen runtime, because child dispatch cannot invoke its own GUI
+supervisor directly. A deliberately rejected payload never opens a port; the
+supervisor restores and starts a disposable previous payload. This proves code
+rollback and preserves a data sentinel; it is not an authenticated cloud
+migration test.
+
+Desktop 1.0 allows **25 seconds** before startup rollback and checks whether the
+web port opens. A poller error after the web port opens does **not** trigger
+rollback. Therefore a payload migration must coordinate both entrypoints and
+finish or reject before web readiness, while preserving old data on rejection.
+A newly built Desktop 1.1 passing startup does not prove this compatibility.
