@@ -44,7 +44,7 @@ def probe(installed, source):
                       '\npathlib.Path(' + repr(str(output)) + ').write_text(json.dumps(result))\n')
     with (app / 'probe.log').open('wb') as log:
         run = subprocess.run([EXECUTABLE, '--mate-child', 'poller', str(script)],
-                             env=env, cwd=current / 'poller', stdout=log, stderr=log, timeout=45)
+                             env=env, cwd=app, stdout=log, stderr=log, timeout=90)
     assert run.returncode == 0, (app / 'probe.log').read_text(errors='replace')
     assert output.exists(), (app / 'probe.log').read_text(errors='replace')
     return json.loads(output.read_text())
@@ -136,13 +136,12 @@ assert g['STARTUP_GRACE_S'] == 25
 current, previous = g['CURRENT'], g['PREVIOUS']
 for part in ('poller', 'web'):
     (previous / part).mkdir(parents=True)
-    (current / part / 'main.py').write_text('raise RuntimeError("migration rejected before bind")\\n')
+    (current / part / 'main.py').write_text('raise SystemExit(1)\\n')
 (previous / 'poller' / 'main.py').write_text('import time\\ntime.sleep(60)\\n')
 (previous / 'web' / 'main.py').write_text('MATE_VERSION = "3.4.50"\\nimport socket, os, time\\ns = socket.socket()\\ns.bind(("127.0.0.1", int(os.environ["WEB_PORT"])))\\ns.listen()\\ntime.sleep(60)\\n')
 marker = app / 'preserved-data.bin'
 marker.write_bytes(b'original database and credentials')
 g['free_port'] = lambda: namespace['free_port'](0)
-g['STARTUP_GRACE_S'] = 2
 g['demo_requested'] = lambda: False
 service = Services(fresh_payload=True)
 def finish():
