@@ -2,7 +2,7 @@
 
 ## 1.2.0
 
-- New installer builds start from the released Mate 4.7.7 payload.
+- New installer builds start from the released Mate 4.7.8 payload.
 - The shell no longer carries a second cloud library: since Mate 4.7.7 the payload runs on Mate's
   own client alone, so the build bundles only what that payload imports.
 - The Leapmotor app certificate travels inside the payload and Mate installs it at the first start:

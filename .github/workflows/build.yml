@@ -16,9 +16,9 @@ on:
   workflow_dispatch:
     inputs:
       mate_ref:
-        description: "Mate tag to seed the payload from (default: v4.7.7)"
+        description: "Mate tag to seed the payload from (default: v4.7.8)"
         required: false
-        default: v4.7.7
+        default: v4.7.8
         type: string
 
 permissions:
@@ -28,7 +28,7 @@ permissions:
 
 env:
   MATE_REPO_URL: https://github.com/ProtossBlaster/leapmotor-mate.git
-  DEFAULT_MATE_REF: v4.7.7
+  DEFAULT_MATE_REF: v4.7.8
 
 jobs:
   macos:
