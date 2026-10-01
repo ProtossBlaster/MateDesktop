@@ -41,7 +41,8 @@ Check "installed to the user profile" (Test-Path (Join-Path $App "LeapMotor Mate
 Check "payload seed present" (Test-Path (Join-Path $App "_internal\payload_seed\web\main.py")) "web/main.py"
 $count = (Get-ChildItem -Recurse $App -File).Count
 Check "whole tree copied" ($count -gt 250) "$count files"
-$leak = Get-ChildItem -Recurse $App -Include app.crt, app.key -ErrorAction SilentlyContinue
+$leak = Get-ChildItem -Recurse $App -Include app.crt, app.key -ErrorAction SilentlyContinue |
+  Where-Object { $_.FullName -notmatch '\\mate_api_runtime\\application_certificate\\' }
 Check "no bundled certificate" (-not $leak) $(if ($leak) { $leak[0].FullName } else { "none under $App" })
 
 # Where an .msi's uninstall entry lands depends on the install CONTEXT, not on us: per-user goes

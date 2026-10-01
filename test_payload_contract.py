@@ -4,9 +4,9 @@
 list was "generated from a full AST scan of web/ and poller/" — once, by hand, at the beginning.
 Nothing re-ran that scan, so when Mate 3.4.10 started importing PIL directly (car_image.py, to
 measure which way the charging animation runs), the contract did not learn about it. It worked
-anyway: Pillow arrives as an extra of leapmotor-api[image] and PyInstaller bundled the whole
-package. By luck, not by contract — and the day that extra changes shape, the first sign would be
-an app dying on someone's Mac with no clue why.
+anyway: Pillow arrived as an extra of a library the shell then bundled whole. By luck, not by
+contract — and the day that extra changed shape, the first sign would have been an app dying on
+someone's Mac with no clue why.
 
 This re-runs the scan every time. It needs the Mate source next door; without it, it skips rather
 than passing on nothing.
@@ -80,9 +80,8 @@ def test_the_contract_does_not_name_things_the_payload_stopped_using():
     """The other direction, as a warning rather than a rule: a name that no longer appears makes
     the frozen build bigger for nothing, and makes the contract harder to trust."""
     used, _ = _payload_imports()
-    # The same shell supports both 3.x rollback and 4.x candidates. These API
-    # imports need to remain even when this check runs against a 3.x seed.
-    compatibility = {"leapmotor_api", "ctypes", "argparse", "binascii", "copy",
+    # Standard-library names the runtime adapter reaches on one platform or the other.
+    compatibility = {"ctypes", "argparse", "binascii", "copy",
                      "errno", "functools", "http", "stat", "sys", "tempfile",
                      "time", "msvcrt", "fcntl"}
     stale = sorted(_declared() - used - SHELL_ONLY - compatibility)

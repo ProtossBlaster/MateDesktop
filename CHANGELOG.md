@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.0
+
+- New installer builds start from the released Mate 4.7.7 payload.
+- The shell no longer carries a second cloud library: since Mate 4.7.7 the payload runs on Mate's
+  own client alone, so the build bundles only what that payload imports.
+- The Leapmotor app certificate travels inside the payload and Mate installs it at the first start:
+  the first-run check expects the material ready and a wizard that asks only for the account, and
+  the packaging guards still refuse any other copy of a certificate.
+- Existing Desktop users receive Mate 4.7.7 through the normal payload update; upgrading the shell
+  is optional. A 1.2.0 shell does not roll a payload back below 4.7.7: those ask for the old
+  library, and the dependency guard refuses them instead of starting them.
+
+
 ## 1.1.0
 
 - Default new installer builds to the released Mate 4.0.0 payload.

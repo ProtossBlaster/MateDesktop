@@ -73,13 +73,9 @@ VSVersionInfo(
 # interpreter ignores it (measured — utf8_mode stayed 0 with it plainly set). The bootloader
 # reads this build option instead, and the children are this same binary re-run, so they
 # inherit it.
-# NO certs/ in --add-data, and it is not an omission. app.crt/app.key are NOT Mate's to
-# redistribute: they are the Leapmotor APP's TLS certificate - the same one for every user, not
-# anybody's account - published at markoceri/leapmotor-certs, and the setup wizard asks the user
-# to upload them once on first run, exactly as under Docker and Home Assistant. Bundling the build
-# machine's copy would make this the one channel handing out a third party's certificate and
-# private key on Mate's behalf, and would freeze every install onto whatever copy was on this disk
-# that day - invisible the moment it is rotated.
+# NO certs/ in --add-data. The Leapmotor app certificate travels INSIDE the payload (Mate 4.7.7
+# and later, poller\mate_api_runtime\application_certificate, hash-pinned) and Mate installs it
+# itself on first run; a developer's own certs\ copy must never ride along.
 & $BuildPy -m PyInstaller `
   --name "LeapMotor Mate" `
   --python-option "X utf8=1" `
@@ -94,7 +90,6 @@ VSVersionInfo(
   --collect-all webview `
   --collect-all uvicorn `
   --collect-all fastapi `
-  --collect-all leapmotor_api `
   --collect-all cryptography `
   --collect-all paho `
   --collect-all jinja2 `
@@ -120,9 +115,10 @@ foreach ($must in @("payload_seed\web\main.py", "payload_seed\poller\main.py")) 
 }
 
 # Asserted rather than trusted, because a recipe above already got this wrong once and shipped
-# the certificate without anyone noticing. What it guards is a property, not a secret: no build
-# of this app redistributes the Leapmotor certificate - the user brings their own copy.
-$Leaked = Get-ChildItem -Recurse "$Out\LeapMotor Mate" -Include "app.crt", "app.key" -ErrorAction SilentlyContinue
+# the certificate without anyone noticing. The one certificate allowed is the payload's own,
+# which Mate installs itself; anything else - a developer's certs\ copy - stops the build.
+$Leaked = Get-ChildItem -Recurse "$Out\LeapMotor Mate" -Include "app.crt", "app.key" -ErrorAction SilentlyContinue |
+  Where-Object { $_.FullName -notmatch '\\mate_api_runtime\\application_certificate\\' }
 if ($Leaked) { throw "REFUSING TO PACKAGE: an app certificate is inside the build ($($Leaked[0].FullName))" }
 
 Write-Host "==> done: $Out\LeapMotor Mate\LeapMotor Mate.exe"

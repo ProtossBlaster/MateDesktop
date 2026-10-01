@@ -5,9 +5,8 @@
 # a strange place for a release to come from, and it is the developer's laptop. Here each platform
 # is built on its own architecture: macos-14 is Apple Silicon, windows-latest is x64.
 #
-# The payload dependencies come from Mate; requirements-shell.txt keeps the build tools and
-# the legacy API needed for rollback, which is the invariant the whole design rests on: a shell that can satisfy
-# every import the payload makes. Pinning a separate list here would let the two drift apart
+# The payload dependencies come from Mate; requirements-shell.txt keeps the build tools, and the
+# invariant the whole design rests on is a shell that can satisfy every import the payload makes. Pinning a separate list here would let the two drift apart
 # silently, and the first sign would be somebody's app failing on an import after an update.
 name: build
 
@@ -17,9 +16,9 @@ on:
   workflow_dispatch:
     inputs:
       mate_ref:
-        description: "Mate tag to seed the payload from (default: v4.0.0)"
+        description: "Mate tag to seed the payload from (default: v4.7.7)"
         required: false
-        default: v4.0.0
+        default: v4.7.7
         type: string
 
 permissions:
@@ -29,7 +28,7 @@ permissions:
 
 env:
   MATE_REPO_URL: https://github.com/ProtossBlaster/leapmotor-mate.git
-  DEFAULT_MATE_REF: v4.0.0
+  DEFAULT_MATE_REF: v4.7.7
 
 jobs:
   macos:

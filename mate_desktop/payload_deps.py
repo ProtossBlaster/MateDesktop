@@ -15,14 +15,10 @@ Generated from a full AST scan of web/ and poller/ (see the prototype notes), no
 # Third-party — the compiled ones are the whole reason the shell needs signing at all.
 import cryptography          # noqa: F401
 import fastapi               # noqa: F401
-import leapmotor_api         # noqa: F401
 import paho.mqtt.client      # noqa: F401
 import uvicorn               # noqa: F401
-# Pillow. It reaches the build anyway, as an extra of leapmotor-api[image] — which is exactly the
-# problem: it is here by luck, not by contract, and the day that extra changes shape nobody would
-# notice until an app died on a user's Mac. web/car_image.py imports PIL DIRECTLY as of Mate 3.4.10
-# (Image + ImageChops, to measure which way the charging animation runs), so the payload asks for it
-# in its own right now.
+# Pillow. web/car_image.py imports PIL DIRECTLY as of Mate 3.4.10 (Image + ImageChops, to measure
+# which way the charging animation runs), so the payload asks for it in its own right.
 import PIL.Image             # noqa: F401
 import PIL.ImageChops        # noqa: F401
 
@@ -65,8 +61,7 @@ import zipfile               # noqa: F401
 import zlib                  # noqa: F401  ← db_reader gzip_db_stream (streamed .db.gz backup, disc #264)
 import zoneinfo              # noqa: F401
 
-# Mate 4's vendored API and migration adapter. Keep leapmotor_api above so a
-# rejected candidate can still roll back to the previous 3.x payload.
+# Mate 4's vendored API and its runtime adapter.
 import argparse              # noqa: F401
 import binascii              # noqa: F401
 import copy                  # noqa: F401
@@ -76,7 +71,6 @@ import errno                 # noqa: F401
 import functools             # noqa: F401
 import http.client           # noqa: F401
 import stat                  # noqa: F401
-import subprocess            # noqa: F401
 import sys                   # noqa: F401
 import tempfile              # noqa: F401
 import time                  # noqa: F401

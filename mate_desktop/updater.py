@@ -126,7 +126,6 @@ _REQ_LINE = re.compile(r"^\s*([A-Za-z0-9._-]+)\s*(?:\[[^\]]*\])?\s*(==|>=|~=|>)?
 _IMPORT_NAME = {
     "python-dotenv": "dotenv",
     "paho-mqtt": "paho.mqtt.client",
-    "leapmotor-api": "leapmotor_api",
     "python-multipart": "multipart",
     "pillow": "PIL",
 }

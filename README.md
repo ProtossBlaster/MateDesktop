@@ -94,18 +94,11 @@ ever asks you for an administrator password to install Mate, that is not Mate.
 
 ## Setting it up
 
-Two steps, the same as on Home Assistant or Docker, and the app walks you through both.
+One step, the same as on Home Assistant or Docker, and the app walks you through it. The Leapmotor
+app certificate Mate needs to log in — the same for everyone, nothing to do with your account —
+comes with Mate and is installed by itself on first start: you are never asked for it.
 
-**1 — The Leapmotor app certificate.** Mate asks for two files, `app.crt` and `app.key`. They are
-the same for everyone and have nothing to do with your account; the setup screen links straight to
-[markoceri/leapmotor-certs](https://github.com/markoceri/leapmotor-certs), where they live. Download
-both and drop them into the two boxes (or paste their text). Once only.
-
-*Why they aren't already inside the app:* they are not this project's to hand out, and a copy
-baked into a download would go quietly stale the day they are changed — with no way to tell from
-the outside why Mate had stopped working.
-
-**2 — A Leapmotor account, and it must be one Mate has to itself.**
+**A Leapmotor account, and it must be one Mate has to itself.**
 
 > ⚠️ **Not the account you are signed into on the official phone app.** Leapmotor allows about one
 > active session per account, so a second client — the app, another add-on, a Docker container,
@@ -227,8 +220,9 @@ until a newer stable release is published or you explicitly select another tag.
 Payload rollback restores code; the Mate 4 migration also saves a separate data backup.
 
 Mate 4 carries its independent API in `poller/vendor/leapmotor_cloud` and its adapter
-in `poller/mate_api_runtime`. Both travel with the payload. The shell continues carrying
-`leapmotor-api` for automatic compatibility selection and older payload rollback.
+in `poller/mate_api_runtime`. Both travel with the payload. Since Mate 4.7.7 the payload
+runs on that client alone, so the shell carries no other cloud library; a payload older than
+4.7.7 still asks for one, and the updater's dependency guard refuses it rather than start it.
 Compatibility tests exercise the actual released Desktop 1.0 executables on
 macOS and Windows, including private storage, process locks and migration
 subprocesses; installed users do not need a rebuilt shell for Mate 4.

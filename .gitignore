@@ -5,10 +5,8 @@ dist/
 payload_seed/
 repo/
 
-# NEVER commit an app certificate. app.crt/app.key are the Leapmotor app's TLS pair, published at
-# markoceri/leapmotor-certs and uploaded by each user in the setup wizard — not something this
-# project redistributes. The build recipes exclude them, the build refuses to package one if it
-# finds it, and this closes the third way in.
+# NEVER commit an app certificate here. The one Mate uses travels inside its payload, hash-pinned;
+# a developer's own copy must not reach this repository or the build, which refuses to package one.
 certs/
 *.crt
 *.key

@@ -1,5 +1,4 @@
-# Retained for automatic compatibility selection and 3.x payload rollback.
-# Mate 4 vendors leapmotor_cloud in its source.
-leapmotor-api[image]==0.3.1
+# Mate's own cloud client (leapmotor_cloud) is vendored in the payload; the payload's other
+# libraries come from its own requirements files at build time.
 pywebview
 pyinstaller

@@ -14,9 +14,8 @@
   refuse. Per-user is a supported configuration — it installs under the user's own profile, needs
   no elevation, and matches what the Inno build already does.
 
-  There is no certs\ anywhere in here. app.crt/app.key are the Leapmotor app's TLS pair, published
-  at markoceri/leapmotor-certs, which the setup wizard asks each user to upload once — this project
-  does not redistribute them, and the build refuses to package one if it finds it.
+  There is no certs\ anywhere in here: the Leapmotor app certificate travels inside the Mate
+  payload and Mate installs it itself on first run. The build refuses to package any other copy.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">

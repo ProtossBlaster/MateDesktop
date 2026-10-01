@@ -40,14 +40,9 @@ rm -rf "$OUT" "$HERE/build"
   --workpath "$HERE/build" \
   --specpath "$HERE/build" \
   --add-data "$HERE/payload_seed:payload_seed" \
-  `# NO certs/ here, and it is not an omission. app.crt/app.key are NOT Mate's to redistribute:` \
-  `# they are the Leapmotor APP's TLS certificate — the same one for every user, not anybody's` \
-  `# account — published at markoceri/leapmotor-certs, and the setup wizard asks the user to` \
-  `# upload them once on first run, exactly as under Docker and Home Assistant. Bundling the` \
-  `# build machine's copy would make this the one channel that hands out a third party's` \
-  `# certificate and private key on Mate's behalf, and would freeze every install onto whatever` \
-  `# copy happened to be on this disk that day — invisible the moment it is rotated.` \
-  `# Caught before publishing, by Silvio asking the right question about API keys.` \
+  `# NO certs/ here. The Leapmotor app certificate travels INSIDE the payload (Mate 4.7.7 and` \
+  `# later, poller/mate_api_runtime/application_certificate, hash-pinned) and Mate installs it` \
+  `# itself on first run; a developer's own certs/ copy must never ride along.` \
   `# Collect these WHOLE, not just what static analysis can reach.` \
   `# The payload is downloaded after the build, so nothing it imports is visible here — and` \
   `# importing a package root does not pull in its submodules (cryptography.fernet was the` \
@@ -56,7 +51,6 @@ rm -rf "$OUT" "$HERE/build"
   --collect-all webview \
   --collect-all uvicorn \
   --collect-all fastapi \
-  --collect-all leapmotor_api \
   --collect-all cryptography \
   --collect-all paho \
   --collect-all jinja2 \

@@ -35,8 +35,8 @@ Candidate-only history is not automatically merged into an older backup.
 ## Build and validation
 
 Both platforms use `requirements-shell.txt` together with the selected Mate
-payload requirements. The legacy `leapmotor-api` dependency remains bundled so
-an older payload can still run after rollback. Candidate API code is vendored in
+payload requirements. The previous cloud library remains bundled so an older
+payload can still run after rollback. Candidate API code is vendored in
 the payload and is not installed from PyPI by the shell build.
 
 Native CI runs startup checks against the built macOS and Windows executables.

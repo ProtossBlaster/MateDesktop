@@ -91,10 +91,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 ; The whole PyInstaller folder, as it comes. recursesubdirs+createallsubdirs keeps _internal's
 ; own tree intact — the app will not start if any of it is flattened.
 ;
-; There is no certs\ in here, and that is not an oversight: app.crt and app.key are the Leapmotor
-; app's TLS certificate — the same for everyone, published at markoceri/leapmotor-certs — which
-; the setup wizard asks the user to upload on first run, exactly as under Docker. This build does
-; not redistribute them, and build_win.ps1 refuses to package if one ever turns up in dist\.
+; There is no certs\ in here: the Leapmotor app certificate travels inside the Mate payload and
+; Mate installs it itself on first run. build_win.ps1 refuses to package any other copy.
 Source: "dist\{#AppName}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]

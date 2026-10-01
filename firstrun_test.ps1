@@ -53,19 +53,19 @@ function Check($name, $ok, $detail) {
                $script:fail++ }
 }
 
-# The certificate is NOT in the package, so a first run must report it missing and the wizard must
-# be the thing the user lands on. If this ever says present:true, a build has started carrying one.
+# Since Mate 4.7.7 the app certificate travels inside the payload and Mate installs it at startup,
+# so a first run reports the material ready and the wizard asks only for the account.
 $cert = Invoke-RestMethod "$base/api/setup/cert-status" -TimeoutSec 15
-Check "certificate absent" (-not $cert.present) "cert-status present=$($cert.present)"
+Check "material installed by itself" ($cert.present -eq $true) "cert-status present=$($cert.present)"
 
 $home_ = Invoke-WebRequest $base -TimeoutSec 20 -UseBasicParsing
 Check "app answers" ($home_.StatusCode -eq 200) "HTTP $($home_.StatusCode), $($home_.Content.Length) bytes"
 
-# The wizard is the whole point of a first run: it is where the user uploads app.crt/app.key.
+# The wizard is the whole point of a first run. Since Mate 4.7.7 it asks for the account alone:
+# the app certificate ships inside the payload and Mate installs it at startup.
 $setup = Invoke-WebRequest "$base/setup" -TimeoutSec 20 -UseBasicParsing
-$hasUpload = $setup.Content -match 'id="file-crt"' -and $setup.Content -match 'id="file-key"'
-Check "wizard offers cert upload" $hasUpload "file-crt + file-key inputs present"
-Check "wizard names the source" ($setup.Content -match 'markoceri/leapmotor-certs') "links markoceri/leapmotor-certs"
+Check "wizard asks for the account" ($setup.Content -match 'id="setup-form"') "setup-form present"
+Check "wizard asks for no certificate" (-not ($setup.Content -match 'id="file-crt"')) "no file-crt input"
 
 # -Encoding UTF8 is not decoration. The launcher writes UTF-8 on purpose; Get-Content without this
 # decodes with the system code page, and the em-dash in "first run — installed bundled payload"

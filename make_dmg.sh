@@ -54,18 +54,8 @@ LeapMotor Mate for macOS
    NB: right-clicking the app and choosing Open no longer works on current
    macOS versions. Use System Settings, as above.
 
-3. Mate asks for the Leapmotor app certificate: two files, app.crt and
-   app.key. They are the same for everybody — nothing to do with your
-   account — and the setup screen links straight to where they live:
-
-       https://github.com/markoceri/leapmotor-certs
-
-   Download both, then drag them into the two boxes. Once only; Mate keeps
-   them from then on. (Mate does not ship them itself: they are somebody
-   else's to give out, and a copy frozen into an app goes stale the day
-   they change it.)
-
-4. Sign in with a Leapmotor account that Mate has to ITSELF.
+3. Sign in with a Leapmotor account that Mate has to ITSELF. Nothing else to
+   download: the Leapmotor app certificate Mate needs comes with it.
 
    NOT the account you use on the official phone app. Leapmotor allows about
    one active session per account: a second client fights Mate for it, they

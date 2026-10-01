@@ -148,10 +148,9 @@ def test_a_missing_database_is_not_consent(tmp_path, monkeypatch):
 # ── certificates the poller can actually reach ──────────────────────────────────────────
 
 def test_no_certificate_is_shipped_unless_the_build_put_one_there(tmp_path, monkeypatch):
-    """The app certificate is the USER's, not Mate's: gitignored, fetched once per person from
-    markoceri/leapmotor-certs, and asked for by the setup wizard on first run — as under Docker
-    and Home Assistant. A build that copies it from the developer's machine hands one person's
-    credentials to everyone who downloads the app, which is what this pins shut."""
+    """The shell carries no certificate of its own: since Mate 4.7.7 the payload carries the app
+    certificate and Mate installs it itself. A build that copies one from the developer's machine
+    must not point the poller at it, which is what this pins shut."""
     import launcher
     monkeypatch.setattr(launcher, "APP_DIR", tmp_path)
     monkeypatch.setattr(launcher, "CURRENT", tmp_path / "payload" / "current")

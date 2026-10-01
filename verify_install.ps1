@@ -33,9 +33,10 @@ $inno = Test-Path (Join-Path $App "unins000.exe")
 Write-Host ("  INFO  {0}  {1}" -f "packaging".PadRight(28), $(if ($inno) { "Inno Setup (unins000.exe present)" } else { "Windows Installer (.msi)" }))
 
 Write-Host "`n=== the property that must never regress ==="
-# The Leapmotor certificate belongs to markoceri/leapmotor-certs and the user uploads it in the
-# setup wizard. No build of this app carries a copy.
-$leak = Get-ChildItem -Recurse $App -Include app.crt, app.key -ErrorAction SilentlyContinue
+# The only certificate in the app is the one the Mate payload carries, which Mate installs itself.
+# No other copy - a developer's certs\ - may be in the build.
+$leak = Get-ChildItem -Recurse $App -Include app.crt, app.key -ErrorAction SilentlyContinue |
+  Where-Object { $_.FullName -notmatch '\\mate_api_runtime\\application_certificate\\' }
 Check "no bundled certificate" (-not $leak) $(if ($leak) { $leak[0].FullName } else { "nothing found under $App" })
 
 Write-Host "`n=== how the user finds and removes it ==="

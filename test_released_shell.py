@@ -157,8 +157,9 @@ result = {'restored': True, 'exit_code': service.exit_code}
     assert result == {'restored': True, 'exit_code': 0}
 
 
-def test_released_shell_selects_legacy_after_nested_preflight_failure(installed):
-    """The installed binary can run the bounded worker and retain a working SDK."""
+def test_released_shell_runs_an_existing_account_on_the_new_client(installed):
+    """Since Mate 4.7.7 there is one cloud client: an existing account starts on it, its data and
+    its key untouched, with no third-party library to fall back to."""
     result = probe(installed, '''
 import os, sqlite3
 from cryptography.fernet import Fernet
@@ -171,19 +172,16 @@ with sqlite3.connect(database) as db:
     db.executemany('INSERT INTO settings VALUES (?,?)', [('leapmotor_user','fixture@example.invalid'), ('leapmotor_pass','fixture-password')])
     db.execute('CREATE TABLE trips(id INTEGER PRIMARY KEY,distance REAL)')
     db.execute('INSERT INTO trips VALUES (7,123.5)')
-# No application certificate exists, so qualification fails before network I/O.
 import mate_api
 import api_backend
-import leapmotor_api
-assert api_backend.LeapmotorApiClient is leapmotor_api.LeapmotorApiClient
-assert os.environ['MATE_API_V2'] == '0'
+from api_v2_bridge import NewAPIClient
+assert api_backend.LeapmotorApiClient is NewAPIClient
 with sqlite3.connect(database) as db:
     values = dict(db.execute('SELECT key,value FROM settings'))
     assert values['leapmotor_user'] == 'fixture@example.invalid'
     assert values['leapmotor_pass'] == 'fixture-password'
     assert db.execute('SELECT * FROM trips').fetchall() == [(7,123.5)]
 assert (app / 'secret.key').read_bytes() == key
-assert (app / 'migration-backups' / 'mate-4.0.0' / 'complete.json').is_file()
-result = {'backend': 'legacy', 'data_preserved': True}
+result = {'backend': 'independent', 'data_preserved': True}
 ''')
-    assert result == {'backend': 'legacy', 'data_preserved': True}
+    assert result == {'backend': 'independent', 'data_preserved': True}
