@@ -309,3 +309,25 @@ def remove_everything(app_dir, log=print) -> None:
         log(f"moved {bundle.name} to the Bin")
     except Exception as exc:                                   # noqa: BLE001
         log(f"could not move the app to the Bin: {exc}")
+
+
+# ── Saying something when there is no window to say it in ───────────────────────────────
+
+def show_error(message: str, log=print) -> None:
+    """Put one line on screen when the app is about to exit without ever drawing anything.
+
+    The log has always carried the reason; nothing carried the reader to the log. An app that
+    vanishes on launch is read as an app that refuses to open, and the report that follows says
+    exactly that and nothing a fix can be built on (MateDesktop #10).
+
+    osascript rather than a window: at this point the services are dead, and the WebView this app
+    draws with needs a page served by them. Never fatal — this runs on the way out.
+    """
+    try:
+        text = str(message).replace("\\", "\\\\").replace('"', '\\"')
+        subprocess.run(["osascript", "-e",
+                        f'display dialog "{text}" with title "LeapMotor Mate" '
+                        'buttons {"OK"} default button 1 with icon stop'],
+                       capture_output=True, timeout=120)
+    except Exception as exc:                                   # noqa: BLE001
+        log(f"could not show the error on screen: {exc}")

@@ -1,4 +1,10 @@
 # Mate's own cloud client (leapmotor_cloud) is vendored in the payload; the payload's other
 # libraries come from its own requirements files at build time.
+#
+# certifi is named here because the SHELL needs it in its own right: it is the only trust store a
+# frozen build has, for its own calls to GitHub and for the SSL_CERT_FILE it hands its children.
+# It used to arrive by accident, as a dependency of the cloud library 1.2.0 removed — and left
+# with it, silently, taking every update check with it (MateDesktop #10).
+certifi
 pywebview
 pyinstaller

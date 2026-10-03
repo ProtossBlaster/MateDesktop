@@ -250,3 +250,18 @@ def remove_everything(app_dir, log=print) -> None:
     has called it that should not have, and this line is how that gets noticed.
     """
     log("remove_everything: not used on Windows — the uninstaller in Settings > Apps does this")
+
+
+# ── Saying something when there is no window to say it in ───────────────────────────────
+
+def show_error(message: str, log=print) -> None:
+    """Put one line on screen when the app is about to exit without ever drawing anything.
+
+    The same reason as on macOS (see plat_mac.show_error), and the same promise: never fatal. Here
+    it is the message box every Windows program has, so nothing has to be running for it to appear.
+    """
+    try:
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(None, str(message), WINDOW_TITLE, 0x10)   # MB_ICONERROR
+    except Exception as exc:                                   # noqa: BLE001
+        log(f"could not show the error on screen: {exc}")

@@ -18,6 +18,7 @@ import json
 import os
 import re
 import shutil
+import ssl
 import tarfile
 import tempfile
 import urllib.request
@@ -31,6 +32,48 @@ TARBALL = "https://github.com/ProtossBlaster/leapmotor-mate/archive/refs/tags/{t
 SHELL_RELEASES_API = "https://api.github.com/repos/ProtossBlaster/MateDesktop/releases/latest"
 PAYLOAD_PARTS = ("web", "poller")
 _TIMEOUT = 30
+# Why the most recent call to GitHub failed, for the log. Empty after one that worked.
+last_error = ""
+
+
+# ── who this shell trusts ───────────────────────────────────────────────────────────────
+# A frozen build carries its own OpenSSL, and that OpenSSL looks for the machine's certificate
+# authorities at the path it was COMPILED with — inside the python.org framework, which exists on
+# the build machine and on no user's Mac. So ssl.create_default_context() loaded ZERO authorities
+# and every request this module made failed verification, on a machine whose network was fine.
+#
+# The children never had the problem: the launcher hands them SSL_CERT_FILE from certifi. Only the
+# shell itself went out with nothing, which is why Mate's own badge could announce a release the
+# app would never install — every launch, for as long as it was installed (MateDesktop #10: a
+# 1.0.0 install still on the Mate 2.10.1 its installer seeded, three months later).
+#
+# Measured on the released 1.0.0 and 1.2.0 bundles: 0 certificates loaded,
+# "CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate".
+_CONTEXT: ssl.SSLContext | None = None
+
+
+def ca_bundle() -> str | None:
+    """The certificate bundle this build carries, or None when it carries none."""
+    try:
+        import certifi
+        path = certifi.where()
+    except Exception:                                          # noqa: BLE001
+        return None
+    return path if path and os.path.isfile(path) else None
+
+
+def https_context() -> ssl.SSLContext:
+    """The TLS context for every request this module makes. Built once, never fatal.
+
+    Falls back to the system trust store when the bundle is missing, because a shell that cannot
+    check for updates must still start — but a build in that state is a defect, and the build
+    scripts refuse to produce one.
+    """
+    global _CONTEXT
+    if _CONTEXT is None:
+        bundle = ca_bundle()
+        _CONTEXT = ssl.create_default_context(cafile=bundle) if bundle else ssl.create_default_context()
+    return _CONTEXT
 
 
 def version_tuple(v: str) -> tuple:
@@ -61,17 +104,26 @@ def payload_version(payload_dir: Path) -> str | None:
 
 
 def _latest(api: str) -> dict | None:
-    """The newest published release at `api`, or None when GitHub can't be reached (never fatal)."""
+    """The newest published release at `api`, or None when GitHub can't be reached (never fatal).
+
+    The reason is kept rather than thrown away. "GitHub unreachable" is what a certificate
+    verification failure looked like for three releases, and it sent everyone who read the log
+    looking at their network.
+    """
+    global last_error
     try:
         req = urllib.request.Request(api, headers={
             "Accept": "application/vnd.github+json", "User-Agent": "leapmotor-mate-desktop"})
-        with urllib.request.urlopen(req, timeout=_TIMEOUT) as r:
+        with urllib.request.urlopen(req, timeout=_TIMEOUT, context=https_context()) as r:
             data = json.load(r)
         tag = data.get("tag_name", "")
         if not tag:
+            last_error = "the release has no tag"
             return None
+        last_error = ""
         return {"tag": tag, "version": str(tag).lstrip("vV")}
-    except Exception:                                          # noqa: BLE001
+    except Exception as exc:                                   # noqa: BLE001
+        last_error = f"{type(exc).__name__}: {exc}"
         return None
 
 
@@ -206,7 +258,8 @@ def fetch_payload(tag: str, dest: Path, log=print) -> Path:
     with tempfile.TemporaryDirectory() as tmp:
         archive = Path(tmp) / "src.tar.gz"
         req = urllib.request.Request(url, headers={"User-Agent": "leapmotor-mate-desktop"})
-        with urllib.request.urlopen(req, timeout=_TIMEOUT) as r, open(archive, "wb") as f:
+        with urllib.request.urlopen(req, timeout=_TIMEOUT, context=https_context()) as r, \
+                open(archive, "wb") as f:
             shutil.copyfileobj(r, f)
         log(f"got {archive.stat().st_size / 1e6:.1f} MB")
         with tarfile.open(archive) as tf:

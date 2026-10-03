@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.1
+
+- The app can reach GitHub again: a frozen build looked for the machine's certificate authorities
+  at a path that exists only on the build machine, so every update check failed verification and
+  the log said "GitHub unreachable". The shell now verifies against the bundle it already hands
+  its children, and a failed check says what actually went wrong.
+- certifi is a build requirement in its own right. It used to arrive as a dependency of the cloud
+  library 1.2.0 removed, and left with it: 1.2.0 shipped with no trust store at all. Both build
+  scripts now refuse to produce a package missing anything they bundle.
+- Installing a newer app over an older one replaces a payload older than the one inside the
+  installer, instead of starting it. A 1.2.0 installed over an install stuck on Mate 2.10.1 could
+  not run that payload — the library it imports is gone — and exited without drawing anything.
+- When the services never come up, the app says so on screen and names the log file.
+
+Nothing changes in the stored data. An install that had been stuck on an old Mate moves to the
+payload inside this installer at the first launch, and to the newest release at the second.
+
 ## 1.2.0
 
 - New installer builds start from the released Mate 4.7.8 payload.

@@ -25,6 +25,16 @@ $Out = Join-Path $Here "dist"
 if (-not (Test-Path $BuildPy)) { throw "build venv missing - see README.md (requirements-shell.txt is required)" }
 if (-not (Test-Path (Join-Path $Repo "web"))) { throw "Mate source not found at $Repo" }
 
+# Everything collected below has to BE in the build environment first - see the same check in
+# build_mac.sh for what shipping without it cost (MateDesktop #10).
+Write-Host "==> checking the build environment"
+foreach ($module in @("webview", "uvicorn", "fastapi", "cryptography", "paho", "jinja2", "PIL", "multipart", "certifi", "tzdata")) {
+    & $BuildPy -c "import $module" 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "build environment is missing $module - install Mate's requirements and requirements-shell.txt into buildenv"
+    }
+}
+
 Write-Host "==> staging the seed payload from $Repo"
 $Seed = Join-Path $Here "payload_seed"
 Remove-Item -Recurse -Force $Seed -ErrorAction SilentlyContinue

@@ -13,6 +13,7 @@ The interface, in full:
     on_system_quit(callback, log)     → run callback when the OS asks the app to quit
     stop_child(proc)                  → ask a service process to stop, as politely as the OS allows
     remove_everything(app_dir, log)   → take the data, and the app, away for good
+    show_error(message, log)          → one line on screen when there is no window left
 """
 from __future__ import annotations
 
@@ -32,6 +33,7 @@ raise_running_instance = _impl.raise_running_instance
 autostart_sync = _impl.autostart_sync
 on_system_quit = _impl.on_system_quit
 remove_everything = _impl.remove_everything
+show_error = _impl.show_error
 
 
 def stop_child(proc) -> None:

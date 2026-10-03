@@ -40,7 +40,7 @@ APP_NAME = "LeapMotorMate"
 #
 # It exists mainly for support: "it stopped updating" has two very different causes, and only
 # this number tells them apart — a shell too old to run the newest Mate, or a real fault.
-SHELL_VERSION = "1.2.0"
+SHELL_VERSION = "1.2.1"
 # Where a NEW SHELL is downloaded from. Only ever shown when an update was REFUSED because this
 # shell is too old to run it — the one case the user has to act on. Mate cannot know this address:
 # the app is released on its own schedule, from its own repository, so the shell hands it over
@@ -219,15 +219,41 @@ def wait_until_serving(port: int, timeout: float) -> bool:
 # ── update ──────────────────────────────────────────────────────────────────────────────
 
 def ensure_payload(log=log) -> None:
-    """First run: seed the payload from the copy baked into the shell, so the app works offline."""
-    if CURRENT.exists():
-        return
+    """Make sure the payload on disk is one THIS shell can run.
+
+    First run: copy the seed baked into the shell, so the app works before it has ever reached the
+    network. But the payload outlives the app — it lives in the data directory, and a new app
+    installed over an old one finds whatever the old one was running. A shell is only ever replaced
+    by a NEWER one, and a newer shell may no longer carry what an old payload imports: 1.2.0
+    dropped the third-party cloud library, so a 1.0.0 install stuck on Mate 2.10.1 came up with
+    both services dying on `ModuleNotFoundError: No module named 'leapmotor_api'`, the port never
+    opening, and the app exiting without drawing anything (MateDesktop #10).
+
+    So the seed is not just a first-run convenience, it is the floor this shell guarantees: a
+    payload older than it, or one too damaged to name its version, is replaced by it. The payload
+    normally runs well ahead of the seed, and that one is left alone.
+    """
     seed = shell_dir() / "payload_seed"
+    have = updater.payload_version(CURRENT) if CURRENT.exists() else None
     if not seed.is_dir():
+        if CURRENT.exists():
+            return                      # running from source: what is installed is all there is
         raise SystemExit("no payload installed and none bundled — broken build")
+    seeded = updater.payload_version(seed)
+    if have and updater.release_order(have) >= updater.release_order(seeded or "0"):
+        return
     CURRENT.parent.mkdir(parents=True, exist_ok=True)
+    if CURRENT.exists():
+        # Not kept as a rollback target: this payload is being replaced precisely because this
+        # shell may not be able to run it, and rolling back onto it is the same failure one
+        # launch later. The outgoing PREVIOUS goes with it, for the same reason.
+        log(f"the installed payload ({have or 'unreadable'}) is older than this app's own "
+            f"{seeded} — replacing it")
+        shutil.rmtree(CURRENT, ignore_errors=True)
+        shutil.rmtree(PREVIOUS, ignore_errors=True)
     shutil.copytree(seed, CURRENT)
-    log(f"first run — installed bundled payload {updater.payload_version(CURRENT)}")
+    log(f"installed bundled payload {updater.payload_version(CURRENT)}"
+        + ("" if have else " (first run)"))
 
 
 def try_update(log=log, *, payload_tag: str | None = None) -> bool:
@@ -235,7 +261,7 @@ def try_update(log=log, *, payload_tag: str | None = None) -> bool:
     have = updater.payload_version(CURRENT)
     rel = updater.release_for_tag(payload_tag) if payload_tag else updater.latest_release()
     if not rel or not rel.get("version"):
-        log("update check skipped (GitHub unreachable)")
+        log(f"update check skipped ({updater.last_error or 'GitHub unreachable'})")
         return False
     if ((payload_tag and rel["version"] == have) or
             (not payload_tag and updater.release_order(rel["version"]) <= updater.release_order(have or "0"))):
@@ -581,8 +607,13 @@ def main(argv=None) -> int:
     services.ready.wait(timeout=STARTUP_GRACE_S + 10)
 
     if not services.url:
+        # An app that exits here has drawn nothing at all, and from the user's side that is
+        # indistinguishable from an app that refused to open: "even if I install version 1.2.0
+        # over it, the app no longer launches" (MateDesktop #10). The log always said why; nothing
+        # pointed at the log. One dialog, naming the file, costs nothing and ends that silence.
         log("services never came up — nothing to show")
         services.stop()
+        plat.show_error(f"Mate could not start. The details are in {LOG_PATH}", log=log)
         return services.exit_code or 1
 
     # One tidy way out, whichever of the three ways the app is asked to end: the user closes the

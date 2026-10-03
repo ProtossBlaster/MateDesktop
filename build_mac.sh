@@ -15,6 +15,18 @@ OUT="$HERE/dist"
 [ -x "$BUILD_PY" ] || { echo "build venv missing — see README.md (requirements-shell.txt is required)"; exit 1; }
 [ -d "$REPO/web" ] || { echo "Mate source not found at $REPO"; exit 1; }
 
+# Everything collected below has to BE in the build environment first. --collect-all on a package
+# pip never installed is not an error to PyInstaller: it is a line in a log nobody reads, and the
+# app ships without it. That is exactly how 1.2.0 lost certifi — it had only ever arrived as a
+# dependency of the cloud library that release removed — and with it went the only trust store a
+# frozen build has. Installs that could never update themselves, and no build said a word
+# (MateDesktop #10).
+echo "==> checking the build environment"
+for module in webview uvicorn fastapi cryptography paho jinja2 PIL multipart certifi tzdata; do
+  "$BUILD_PY" -c "import $module" 2>/dev/null \
+    || { echo "    MISSING: $module — install Mate's requirements and requirements-shell.txt into buildenv"; exit 1; }
+done
+
 echo "==> staging the seed payload from $REPO"
 rm -rf "$HERE/payload_seed"
 mkdir -p "$HERE/payload_seed"

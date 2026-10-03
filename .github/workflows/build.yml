@@ -16,9 +16,9 @@ on:
   workflow_dispatch:
     inputs:
       mate_ref:
-        description: "Mate tag to seed the payload from (default: v4.7.8)"
+        description: "Mate tag to seed the payload from (default: v4.7.18)"
         required: false
-        default: v4.7.8
+        default: v4.7.18
         type: string
 
 permissions:
@@ -28,7 +28,7 @@ permissions:
 
 env:
   MATE_REPO_URL: https://github.com/ProtossBlaster/leapmotor-mate.git
-  DEFAULT_MATE_REF: v4.7.8
+  DEFAULT_MATE_REF: v4.7.18
 
 jobs:
   macos:
@@ -70,7 +70,7 @@ jobs:
       - name: Unit tests
         env:
           MATE_REPO: ${{ github.workspace }}/mate-src
-        run: ./buildenv/bin/python -m pytest -q test_autostart.py test_plat_win.py test_payload_contract.py test_candidate_payload.py
+        run: ./buildenv/bin/python -m pytest -q test_autostart.py test_plat_win.py test_payload_contract.py test_candidate_payload.py test_the_update_check_trusts_github.py test_the_seed_replaces_an_older_payload.py
 
       - name: Build the app and the disk image
         env:
@@ -143,7 +143,7 @@ jobs:
       - name: Unit tests
         env:
           MATE_REPO: ${{ github.workspace }}/mate-src
-        run: .\buildenv\Scripts\python.exe -m pytest -q test_autostart.py test_plat_win.py test_payload_contract.py test_candidate_payload.py
+        run: .\buildenv\Scripts\python.exe -m pytest -q test_autostart.py test_plat_win.py test_payload_contract.py test_candidate_payload.py test_the_update_check_trusts_github.py test_the_seed_replaces_an_older_payload.py
 
       # Present on some runner images and not others, and build_win.ps1 only WARNS when it is
       # missing — which on a release run would mean an app with no installer and a green tick.

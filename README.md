@@ -202,6 +202,13 @@ anything. The badge next to the version tells you where you stand:
 
 If GitHub can't be reached, Mate starts on the version it already has.
 
+**Installing a newer app over an older one never leaves you on a payload it cannot run.** The
+installer carries a seed copy of Mate, and from 1.2.1 that seed is also the floor: a payload older
+than it — one left behind by an install that had stopped updating itself — is replaced by it at the
+next launch, with the data untouched. Before that, the old payload was kept and the app could end
+up importing a library the new shell no longer carries, failing to start with nothing on screen
+(MateDesktop #10).
+
 **Mate 4.0.0 also reaches installed Desktop 1.0 through this normal update.**
 No shell reinstall, certificate upload, account setup, export/import or migration
 command is required. Existing settings, encryption key and history stay in place.
@@ -230,7 +237,8 @@ subprocesses; installed users do not need a rebuilt shell for Mate 4.
 Run the contract and actual service startup checks with:
 
 ```bash
-MATE_REPO=../leapmotor-mate ./buildenv/bin/python -m pytest -q test_payload_contract.py test_candidate_payload.py
+MATE_REPO=../leapmotor-mate ./buildenv/bin/python -m pytest -q test_payload_contract.py test_candidate_payload.py \
+  test_the_update_check_trusts_github.py test_the_seed_replaces_an_older_payload.py
 ```
 
 ---
@@ -239,14 +247,14 @@ MATE_REPO=../leapmotor-mate ./buildenv/bin/python -m pytest -q test_payload_cont
 
 | Component | Stable release | Purpose |
 | --- | --- | --- |
-| MateDesktop shell | `1.1.0` | Python runtime, native libraries, launcher, and installers |
-| Mate payload | `4.0.0` | Downloaded `web/` and `poller/` application |
+| MateDesktop shell | `1.2.1` | Python runtime, native libraries, launcher, and installers |
+| Mate payload | `4.7.18` | Downloaded `web/` and `poller/` application |
 
-The two versions are independent. Desktop 1.1.0 builds default to the released
-Mate `v4.0.0` seed; `payload-seed.txt` records the exact seed shipped in each
-release. Existing Desktop 1.0 installations receive the same payload through
-normal updates. See [stable release notes](RELEASE_NOTES_v1.1.0.md).
-The [RC notes](RELEASE_NOTES_v1.1.0-rc.1.md) describe the earlier opt-in test only.
+The two versions are independent. Desktop 1.2.1 builds default to the released
+Mate `v4.7.18` seed; `payload-seed.txt` records the exact seed shipped in each
+release. Existing installations receive the same payload through normal updates.
+See [stable release notes](RELEASE_NOTES_v1.2.1.md).
+The [RC notes](RELEASE_NOTES_v1.1.0-rc.1.md) describe an earlier opt-in test only.
 
 ## Building it yourself
 
