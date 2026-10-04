@@ -40,7 +40,7 @@ APP_NAME = "LeapMotorMate"
 #
 # It exists mainly for support: "it stopped updating" has two very different causes, and only
 # this number tells them apart — a shell too old to run the newest Mate, or a real fault.
-SHELL_VERSION = "1.2.1"
+SHELL_VERSION = "1.2.2"
 # Where a NEW SHELL is downloaded from. Only ever shown when an update was REFUSED because this
 # shell is too old to run it — the one case the user has to act on. Mate cannot know this address:
 # the app is released on its own schedule, from its own repository, so the shell hands it over

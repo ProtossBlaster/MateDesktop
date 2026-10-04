@@ -90,6 +90,13 @@ ever asks you for an administrator password to install Mate, that is not Mate.
 > Right-click → Open, the old shortcut for this, no longer works on current macOS. The route
 > through System Settings is the one that does.
 
+> **"LeapMotor Mate is damaged and can't be opened", and no Open Anyway?** That is a copy of 1.2.1
+> or earlier: those were sealed before their version number was written into them, and macOS reads
+> that as an altered app ([#11](https://github.com/ProtossBlaster/MateDesktop/issues/11)). Download
+> the current release and drag it over the old one — your history and settings stay where they are.
+> To open the copy you already have instead, run this once in Terminal:
+> `xattr -dr com.apple.quarantine "/Applications/LeapMotor Mate.app"`
+
 ---
 
 ## Setting it up
@@ -247,13 +254,13 @@ MATE_REPO=../leapmotor-mate ./buildenv/bin/python -m pytest -q test_payload_cont
 
 | Component | Stable release | Purpose |
 | --- | --- | --- |
-| MateDesktop shell | `1.2.1` | Python runtime, native libraries, launcher, and installers |
+| MateDesktop shell | `1.2.2` | Python runtime, native libraries, launcher, and installers |
 | Mate payload | `4.7.18` | Downloaded `web/` and `poller/` application |
 
-The two versions are independent. Desktop 1.2.1 builds default to the released
+The two versions are independent. Desktop 1.2.2 builds default to the released
 Mate `v4.7.18` seed; `payload-seed.txt` records the exact seed shipped in each
 release. Existing installations receive the same payload through normal updates.
-See [stable release notes](RELEASE_NOTES_v1.2.1.md).
+See [stable release notes](RELEASE_NOTES_v1.2.2.md).
 The [RC notes](RELEASE_NOTES_v1.1.0-rc.1.md) describe an earlier opt-in test only.
 
 ## Building it yourself

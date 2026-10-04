@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.2
+
+- macOS no longer calls the app damaged. Every macOS build up to 1.2.1 wrote the shell version into
+  Info.plist after PyInstaller had signed the bundle, which broke the seal: a downloaded copy was
+  "damaged and can't be opened", with no "Open Anyway" in Privacy & Security, and only removing the
+  quarantine by hand in Terminal let it start (#11). The bundle is signed again once it is final,
+  and the build stops if the signature does not verify — make_dmg.sh checks the app once more
+  inside the disk image, which is the file people download.
+
+Nothing else changes: the same Mate v4.7.18 inside the installer, the same Windows packages, and
+nothing in the stored data.
+
 ## 1.2.1
 
 - The app can reach GitHub again: a frozen build looked for the machine's certificate authorities
