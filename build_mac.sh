@@ -84,5 +84,14 @@ PLIST="$OUT/LeapMotor Mate.app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $SHELL_VERSION" "$PLIST" 2>/dev/null \
   || /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $SHELL_VERSION" "$PLIST"
 
+# PyInstaller signed the bundle (ad hoc) BEFORE the two lines above wrote the version into
+# Info.plist, and that signature seals Info.plist: left as it was, the app reads to macOS as altered
+# after signing — "damaged and can't be opened", with no "Open Anyway" in Privacy & Security, so the
+# instructions inside the disk image could not work (MateDesktop #11; every release up to 1.2.1).
+# Signed again, ad hoc as PyInstaller did, now that the bundle is final; then checked, so a build
+# that would reach people damaged stops here instead.
+codesign --force --sign - "$OUT/LeapMotor Mate.app"
+codesign --verify --deep --strict --verbose=2 "$OUT/LeapMotor Mate.app"
+
 echo "==> done: $OUT/LeapMotor Mate.app (shell $SHELL_VERSION)"
 du -sh "$OUT/LeapMotor Mate.app"

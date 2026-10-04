@@ -97,5 +97,17 @@ hdiutil create \
   "$DMG" >/dev/null
 
 rm -rf "$STAGING"
+
+# What leaves this script is the image, so the app is checked again INSIDE it, as a person who
+# downloads it will open it: a signature broken anywhere between the build and here would make
+# macOS call the app damaged (MateDesktop #11).
+echo "==> checking the app inside the image"
+CHECK="$(mktemp -d)"
+hdiutil attach -nobrowse -readonly -mountpoint "$CHECK" "$DMG" >/dev/null
+trap 'hdiutil detach -quiet "$CHECK"' EXIT
+codesign --verify --deep --strict --verbose=2 "$CHECK/LeapMotor Mate.app"
+hdiutil detach -quiet "$CHECK"
+trap - EXIT
+
 echo "==> done: $DMG"
 du -h "$DMG" | cut -f1 | sed 's/^/    /'
