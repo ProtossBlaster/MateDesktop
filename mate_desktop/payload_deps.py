@@ -38,6 +38,7 @@ import hashlib               # noqa: F401
 import hmac                  # noqa: F401
 import html                  # noqa: F401
 import io                    # noqa: F401
+import ipaddress             # noqa: F401  ← security.py, ha_client.py: home-network names (Mate 4.25.0)
 import json                  # noqa: F401
 import logging               # noqa: F401
 import math                  # noqa: F401
