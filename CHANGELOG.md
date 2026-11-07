@@ -6,7 +6,9 @@
   them to versions without published advisories (FastAPI 0.162.2 with Starlette 1.10.0,
   python-multipart 0.0.33, Jinja2 3.1.6, Pillow 13.0.0, cryptography 50.0.2). Desktop 1.2.2 carries
   the older ones, so it refuses Mate 4.25.0 and asks for a newer app; this one takes it.
-- The installer carries Mate v4.25.0.
+- The installer carries Mate v4.25.0, which also starts on a Mac again: Mate 4.24.0 waited for its own
+  lock there, and its web never opened.
+- The Mac app is built on GitHub's macos-15 runners; macos-14 is no longer offered.
 - The shell's contract names `ipaddress`, which Mate 4.25.0 imports. The 1.2.2 app already carried it,
   pulled in by another module.
 
