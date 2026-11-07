@@ -254,13 +254,13 @@ MATE_REPO=../leapmotor-mate ./buildenv/bin/python -m pytest -q test_payload_cont
 
 | Component | Stable release | Purpose |
 | --- | --- | --- |
-| MateDesktop shell | `1.2.2` | Python runtime, native libraries, launcher, and installers |
-| Mate payload | `4.7.18` | Downloaded `web/` and `poller/` application |
+| MateDesktop shell | `1.2.3` | Python runtime, native libraries, launcher, and installers |
+| Mate payload | `4.25.0` | Downloaded `web/` and `poller/` application |
 
-The two versions are independent. Desktop 1.2.2 builds default to the released
-Mate `v4.7.18` seed; `payload-seed.txt` records the exact seed shipped in each
+The two versions are independent. Desktop 1.2.3 builds default to the released
+Mate `v4.25.0` seed; `payload-seed.txt` records the exact seed shipped in each
 release. Existing installations receive the same payload through normal updates.
-See [stable release notes](RELEASE_NOTES_v1.2.2.md).
+See [stable release notes](RELEASE_NOTES_v1.2.3.md).
 The [RC notes](RELEASE_NOTES_v1.1.0-rc.1.md) describe an earlier opt-in test only.
 
 ## Building it yourself

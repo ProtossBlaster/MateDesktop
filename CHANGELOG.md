@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.3
+
+- The app carries the web libraries Mate 4.25.0 needs. Mate 4.25.0 is a security release and moves
+  them to versions without published advisories (FastAPI 0.162.2 with Starlette 1.10.0,
+  python-multipart 0.0.33, Jinja2 3.1.6, Pillow 13.0.0, cryptography 50.0.2). Desktop 1.2.2 carries
+  the older ones, so it refuses Mate 4.25.0 and asks for a newer app; this one takes it.
+- The installer carries Mate v4.25.0.
+- The shell's contract names `ipaddress`, which Mate 4.25.0 imports. The 1.2.2 app already carried it,
+  pulled in by another module.
+
+Nothing in the stored data changes.
+
 ## 1.2.2
 
 - macOS no longer calls the app damaged. Every macOS build up to 1.2.1 wrote the shell version into
