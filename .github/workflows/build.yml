@@ -3,7 +3,7 @@
 # The Windows build has so far only ever been made inside a Parallels VM on an Apple Silicon Mac —
 # an ARM machine running an x64 Python under emulation. It produces the right artifact, but it is
 # a strange place for a release to come from, and it is the developer's laptop. Here each platform
-# is built on its own architecture: macos-14 is Apple Silicon, windows-latest is x64.
+# is built on its own architecture: macos-15 is Apple Silicon, windows-latest is x64.
 #
 # The payload dependencies come from Mate; requirements-shell.txt keeps the build tools, and the
 # invariant the whole design rests on is a shell that can satisfy every import the payload makes. Pinning a separate list here would let the two drift apart
@@ -33,7 +33,7 @@ env:
 jobs:
   macos:
     name: macOS (Apple Silicon)
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
