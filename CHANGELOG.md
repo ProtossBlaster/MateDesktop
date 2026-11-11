@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.4
+
+- On Windows, an update with the setup `.exe` removes the previous version's libraries before it
+  copies its own. Desktop 1.2.3 installed with the `.exe` over an earlier version kept both records of
+  each library it had updated (fastapi 0.115.0 and 0.162.2, and nine more); the app read the old ones
+  and refused every Mate after 4.25.0, with a red version badge that no restart cleared (#12). Running
+  this installer over the app clears it.
+- The Windows build installs the released 1.2.2 setup and this one on top, and fails if a library is
+  recorded twice.
+
+The same libraries as 1.2.3, the same Mate v4.25.0 inside the installer, and nothing in the stored
+data.
+
 ## 1.2.3
 
 - The app carries the web libraries Mate 4.25.0 needs. Mate 4.25.0 is a security release and moves
