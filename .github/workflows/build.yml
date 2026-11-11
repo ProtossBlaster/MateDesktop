@@ -188,6 +188,12 @@ jobs:
           Write-Host ("  {0}  {1} MB" -f $msi.Name, [math]::Round($msi.Length/1MB))
           Write-Host ("  {0}  {1} MB" -f $exe.Name, [math]::Round($exe.Length/1MB))
 
+      # MateDesktop #12: the setup .exe installed over 1.2.2 left the older libraries' records next
+      # to the new ones, and the updater refused every Mate after the seed. Installs the real 1.2.2
+      # release, this build's setup on top, and counts the records.
+      - name: An update with the setup .exe leaves no older library behind
+        run: .\test_exe_upgrade_leaves_no_old_libraries.ps1
+
       # What actually leaves this job is the zip, and the loose installers do not ship at all.
       #
       # Chromium puts .exe and .msi in a category that REQUIRES an explicit click before it will

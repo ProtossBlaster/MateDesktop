@@ -87,6 +87,23 @@ Name: "italian";  MessagesFile: "compiler:Languages\Italian.isl"
 ; Having one package create it and the other not would be the confusing outcome.
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
+[InstallDelete]
+; The previous version's libraries go before this version's are copied in (MateDesktop #12).
+;
+; Inno installs on top and deletes nothing it is not told to. From 1.2.2 to 1.2.3 the bundled
+; libraries changed version, so an update with this .exe left _internal\ holding BOTH
+; fastapi-0.115.0.dist-info and fastapi-0.162.2.dist-info (and jinja2, Pillow, cryptography,
+; paho-mqtt...). The code that ran was the new one; the updater's guard reads the version through
+; importlib.metadata, found the OLD record, and refused every Mate after the one this installer
+; seeds: "fastapi ==0.162.2 (this app carries 0.115.0)". A red badge that no restart could
+; clear. Measured with the released 1.2.2 and 1.2.3 installers.
+;
+; Only {app}\_internal: it is the build's own folder and nothing else lives in it. The data is
+; in %LOCALAPPDATA%\LeapMotorMate, nowhere near {app}, and AppMutex above stops the setup while
+; the app is running. test_exe_upgrade_leaves_no_old_libraries.ps1 installs a real older release
+; and this setup on top, and counts the records.
+Type: filesandordirs; Name: "{app}\_internal"
+
 [Files]
 ; The whole PyInstaller folder, as it comes. recursesubdirs+createallsubdirs keeps _internal's
 ; own tree intact — the app will not start if any of it is flattened.
