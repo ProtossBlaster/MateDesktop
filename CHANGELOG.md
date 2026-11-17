@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.5
+
+- A Mate that is still starting is waited for, and one whose web server exited is not. The app gave
+  its two services a fixed 25 seconds; on one Windows PC the same Mate went from 5 seconds to 21-26
+  between two days, and every launch was stopped a moment before it answered (#13). The wait now lasts
+  while the web server runs, up to 180 seconds, and ends at once when it exits, so a broken Mate is
+  still rolled back without delay.
+- The app also waits through a rollback: it gave up after 35 seconds even while the previous Mate,
+  just restored, was starting.
+- The log says after how many seconds Mate answered, or why it did not.
+
+The same libraries as 1.2.4, the same Mate v4.25.0 inside the installer, and nothing in the stored
+data.
+
 ## 1.2.4
 
 - On Windows, an update with the setup `.exe` removes the previous version's libraries before it
