@@ -63,7 +63,11 @@ RELAUNCH_CODE = 42          # same contract as run.sh: the app asking to be rest
 # offer "take it all away" is inside the app itself.
 UNINSTALL_CODE = 43
 DEFAULT_PORT = 4000
-STARTUP_GRACE_S = 25        # how long a fresh payload gets to answer before we call it broken
+# How long the services get to answer while the web server is still running. It used to be a fixed
+# 25 s, and on one Windows PC the same payload went from 5 s to 21-26 s overnight: every launch was
+# stopped a moment before the web server answered (MateDesktop #13). A payload that is broken exits,
+# and that ends the wait at once; this limit is only for one that hangs.
+STARTUP_LIMIT_S = 180
 
 
 def log(msg: str) -> None:
@@ -205,13 +209,16 @@ def child_env(part: str, port: int) -> dict:
     return env
 
 
-def wait_until_serving(port: int, timeout: float) -> bool:
-    deadline = time.time() + timeout
-    while time.time() < deadline:
+def wait_until_serving(port: int, web: subprocess.Popen, limit: float = STARTUP_LIMIT_S) -> bool:
+    """True once the web server answers on `port`; False as soon as it exits, or after `limit`."""
+    deadline = time.monotonic() + limit
+    while time.monotonic() < deadline:
         with socket.socket() as s:
             s.settimeout(0.5)
             if s.connect_ex(("127.0.0.1", port)) == 0:
                 return True
+        if web.poll() is not None:
+            return False
         time.sleep(0.4)
     return False
 
@@ -525,8 +532,13 @@ class Services(threading.Thread):
                 stop(self._procs)
                 return
 
-            if not wait_until_serving(port, STARTUP_GRACE_S):
-                log(f"payload did not answer on port {port} within {STARTUP_GRACE_S}s")
+            started = time.monotonic()
+            if not wait_until_serving(port, self._procs[-1]):
+                waited = time.monotonic() - started
+                exited = self._procs[-1].poll()
+                log(f"payload did not answer on port {port}: "
+                    + (f"the web server exited (code {exited}) after {waited:.0f}s" if exited is not None
+                       else f"no answer within {waited:.0f}s"))
                 stop(self._procs)
                 if fresh and updater.rollback(CURRENT, PREVIOUS, log=log):
                     fresh = False
@@ -536,7 +548,8 @@ class Services(threading.Thread):
                 return
 
             self.url = f"http://127.0.0.1:{port}"
-            log(f"Mate {updater.payload_version(CURRENT)} serving on {self.url}")
+            log(f"Mate {updater.payload_version(CURRENT)} serving on {self.url} "
+                f"(answered after {time.monotonic() - started:.0f}s)")
             if self.ready.is_set():
                 window.reload(self.url, log=log)   # belt and braces: the port no longer changes
             self.ready.set()
@@ -604,7 +617,8 @@ def main(argv=None) -> int:
 
     services = Services(fresh_payload=fresh)
     services.start()
-    services.ready.wait(timeout=STARTUP_GRACE_S + 10)
+    # A fresh payload that fails is rolled back and the previous one started: two waits in a row.
+    services.ready.wait(timeout=2 * STARTUP_LIMIT_S + 30)
 
     if not services.url:
         # An app that exits here has drawn nothing at all, and from the user's side that is

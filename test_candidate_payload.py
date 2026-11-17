@@ -87,7 +87,7 @@ def test_real_payload_serves_with_desktop_child_environment(launcher, monkeypatc
     port = launcher.free_port(0)
     procs = launcher.spawn(port)
     try:
-        assert launcher.wait_until_serving(port, 25), (launcher.APP_DIR / "mate-web-console.log").read_text()
+        assert launcher.wait_until_serving(port, procs[-1], limit=25), (launcher.APP_DIR / "mate-web-console.log").read_text()
         assert all(p.poll() is None for p in procs), (launcher.APP_DIR / "mate-poller-console.log").read_text()
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=5) as response:
             assert response.status == 200

@@ -70,7 +70,7 @@ jobs:
       - name: Unit tests
         env:
           MATE_REPO: ${{ github.workspace }}/mate-src
-        run: ./buildenv/bin/python -m pytest -q test_autostart.py test_plat_win.py test_payload_contract.py test_candidate_payload.py test_the_update_check_trusts_github.py test_the_seed_replaces_an_older_payload.py
+        run: ./buildenv/bin/python -m pytest -q test_a_slow_start_is_waited_for.py test_autostart.py test_plat_win.py test_payload_contract.py test_candidate_payload.py test_the_update_check_trusts_github.py test_the_seed_replaces_an_older_payload.py
 
       - name: Build the app and the disk image
         env:
